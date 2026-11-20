@@ -1,0 +1,67 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>CCU-Jung 통합 웹서비스</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f6fa;
+      margin: 0;
+      color: #243044;
+    }
+    header {
+      background: #143b69;
+      color: white;
+      padding: 35px 20px;
+      text-align: center;
+    }
+    main {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .services {
+      display: grid;
+      grid-template-columns:
+        repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+    .card {
+      background: white;
+      padding: 30px 20px;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 3px 12px #00000012;
+    }
+    .card h2 { font-size: 19px; }
+    .card a {
+      display: inline-block;
+      background: #1764a6;
+      color: white;
+      padding: 12px 18px;
+      border-radius: 6px;
+      text-decoration: none;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CCU-Jung</h1>
+    <p>교육과정 개발 및 교육품질관리 통합 웹서비스</p>
+  </header>
+  <main>
+    <div class="services">
+      <section class="card">
+        <h2>전공심화과정 운영진단</h2>
+        <p>운영진단 편람 열람</p>
+        <a href="./advanced/">바로가기</a>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
