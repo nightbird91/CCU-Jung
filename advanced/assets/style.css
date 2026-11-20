@@ -858,3 +858,5 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
   color: hsl(var(--h, 220) 70% var(--pts-l)); background: hsl(var(--h, 220) 75% var(--pts-bg));
 }
 .ind .ipts small { display: inline; font-size: 12px; color: inherit; font-weight: 700; }
+/* 점수 배지 크기 통일 (한 자리·두 자리 점수 모두 같은 폭) */
+.ind .ipts { box-sizing: border-box; width: 56px; justify-content: center; padding: 3px 0; font-variant-numeric: tabular-nums; }
