@@ -114,17 +114,7 @@
           var items = a.indicators.filter(match);
           if (!items.length) return;
           catInds += items.length;
-          fb += '<details class="area" open><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts">' + a.score + '점</span></summary><ul class="ind-list">';
-          items.forEach(function (ind) {
-            fb += '<li><a class="ind" href="#/i/' + ind.id + '">' +
-              '<span class="iid">' + esc(ind.id) + '</span>' +
-              '<span class="iname">' + esc(ind.name) + '</span>' +
-              (ind.sub ? '<span class="ind-sub">' + ind.sub.map(function (s) { return esc(s.no + ' ' + s.name + ' (' + s.score + ')'); }).join('<br>') + '</span>' : '') +
-              '<span class="ichips">' + typeChip(ind.type) + '</span>' +
-              '<span class="ipts">' + ind.score + '<small>점</small></span>' +
-              '</a></li>';
-          });
-          fb += '</ul></details>';
+          fb += renderArea(a, items);
         });
         if (fb) {
           body += '<div class="field"><div class="field-head"><span class="fid">' + esc(f.id) + '</span><h3>' + esc(f.name) + '</h3><span class="fpts">' + f.score + '점</span></div>' + fb + '</div>';
@@ -139,6 +129,114 @@
     });
     return h || '<p class="empty">해당 유형의 지표가 없습니다.</p>';
   }
+
+  function renderArea(a, items) {
+    var fb = '<details class="area" open><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts">' + a.score + '점</span></summary><ul class="ind-list">';
+    items.forEach(function (ind) {
+      fb += '<li><a class="ind" href="#/i/' + ind.id + '">' +
+        '<span class="iid">' + esc(ind.id) + '</span>' +
+        '<span class="iname">' + esc(ind.name) + '</span>' +
+        (ind.sub ? '<span class="ind-sub">' + ind.sub.map(function (s) { return esc(s.no + ' ' + s.name + ' (' + s.score + ')'); }).join('<br>') + '</span>' : '') +
+        '<span class="ichips">' + typeChip(ind.type) + '</span>' +
+        '<span class="ipts">' + ind.score + '<small>점</small></span>' +
+        '</a></li>';
+    });
+    return fb + '</ul></details>';
+  }
+
+  /* ---------- 구분(대학/학과) · 분야 화면 ---------- */
+  function findField(id) {
+    var r = null;
+    DATA.categories.forEach(function (c) { c.fields.forEach(function (f) { if (f.id === id) r = { c: c, f: f }; }); });
+    return r;
+  }
+  function allFields() {
+    var list = [];
+    DATA.categories.forEach(function (c) { c.fields.forEach(function (f) { list.push({ c: c, f: f }); }); });
+    return list;
+  }
+  function countInds(f) { return f.areas.reduce(function (n, a) { return n + a.indicators.length; }, 0); }
+
+  function viewCategory(id) {
+    var c = DATA.categories.filter(function (x) { return x.id === id; })[0];
+    if (!c) { viewHome(); return; }
+    setTitle(c.id + '. ' + c.name, '구분 · ' + c.score + '점');
+    setTab('home');
+    var n = c.fields.reduce(function (s, f) { return s + countInds(f); }, 0);
+    var h = '<section class="card cat c' + c.id + '"><div class="cat-head" style="border-bottom:0"><div class="cat-badge">' + esc(c.id) + '</div><div><div class="meta">구분 · ' + c.fields.length + '개 분야 · ' + n + '개 지표</div><h2>' + esc(c.name) + '</h2></div><div class="pts">' + c.score + '<small>점</small></div></div></section>';
+    h += '<h3 class="section-title">분야 선택</h3>';
+    c.fields.forEach(function (f) {
+      h += '<a class="card field-card c' + c.id + '" href="#/f/' + f.id + '"><div><span class="fid">' + esc(f.id) + '</span><b>' + esc(f.name) + '</b><div class="muted">' +
+        f.areas.map(function (a) { return esc(a.id + ' ' + a.name); }).join(' · ') + '</div><div class="muted">' + countInds(f) + '개 지표</div></div><span class="fpts">' + f.score + '점</span>' + caret() + '</a>';
+    });
+    if (c.id === '2') h += '<section class="card deduction" style="border-top:1px solid var(--line)"><span class="chip">감점</span><span>' + esc(DATA.deduction.name) + '</span><b>' + DATA.deduction.score + '</b></section>';
+    $app.innerHTML = h;
+  }
+
+  function viewField(id) {
+    var r = findField(id);
+    if (!r) { viewHome(); return; }
+    var c = r.c, f = r.f;
+    setTitle(f.id + ' ' + f.name, c.name + ' · ' + f.score + '점');
+    setTab('home');
+    var h = '<div class="crumbs"><span><a href="#/c/' + c.id + '">' + esc(c.id + '. ' + c.name) + '</a></span><span>' + esc(f.id + ' ' + f.name) + '</span></div>';
+    h += '<section class="card field-hero c' + c.id + '"><div class="muted">분야 ' + esc(f.id) + ' · ' + f.areas.length + '개 영역 · ' + countInds(f) + '개 지표</div><h2>' + esc(f.name) + '</h2>' +
+      '<div class="bar" role="img" aria-label="영역별 배점">' + f.areas.map(function (a, i) { return '<span style="width:' + (a.score / f.score * 100) + '%;opacity:' + (1 - i * 0.3) + '" class="' + (c.id === '1' ? 'c' : 'd') + '"></span>'; }).join('') + '</div>' +
+      '<div class="legend">' + f.areas.map(function (a) { return '<span>' + esc(a.id + ' ' + a.name) + ' ' + a.score + '점</span>'; }).join('') + '</div></section>';
+    f.areas.forEach(function (a) { h += '<div class="card" style="padding:4px 10px">' + renderArea(a, a.indicators) + '</div>'; });
+    var list = allFields(), pos = -1;
+    list.forEach(function (x, i) { if (x.f.id === id) pos = i; });
+    var prev = list[pos - 1], next = list[pos + 1];
+    h += '<div class="pager">' +
+      (prev ? '<a href="#/f/' + prev.f.id + '"><small>‹ 이전 분야</small>' + esc(prev.c.name + ' · ' + prev.f.id + ' ' + prev.f.name) + '</a>' : '<span class="ghost"></span>') +
+      (next ? '<a class="next" href="#/f/' + next.f.id + '"><small>다음 분야 ›</small>' + esc(next.c.name + ' · ' + next.f.id + ' ' + next.f.name) + '</a>' : '<span class="ghost"></span>') + '</div>';
+    $app.innerHTML = h;
+  }
+
+  /* ---------- 사이드바 ---------- */
+  var $side = document.getElementById('sidebar');
+  var $scrim = document.getElementById('scrim');
+  var $menu = document.getElementById('menuBtn');
+  function renderSidebar() {
+    var h = '<div class="side-head"><b>편람 목차</b><span class="muted">' + esc(DATA.meta.cycle) + '</span></div><nav class="side-nav" aria-label="구분·분야">';
+    h += '<a class="side-link side-all" href="#/" data-key="home">전체 지표 <span>100점</span></a>';
+    DATA.categories.forEach(function (c) {
+      h += '<div class="side-cat c' + c.id + '"><a class="side-cat-link" href="#/c/' + c.id + '" data-key="c' + c.id + '"><i>' + esc(c.id) + '</i>' + esc(c.name) + '<span>' + c.score + '점</span></a><ul>';
+      c.fields.forEach(function (f) {
+        h += '<li><a class="side-link side-field" href="#/f/' + f.id + '" data-key="f' + f.id + '"><em>' + esc(f.id) + '</em>' + esc(f.name) + '<span>' + f.score + '점</span></a><ul class="side-inds" data-field="' + f.id + '">';
+        f.areas.forEach(function (a) {
+          h += '<li class="side-area">' + esc(a.id + ' ' + a.name) + '</li>';
+          a.indicators.forEach(function (ind) {
+            h += '<li><a class="side-ind" href="#/i/' + ind.id + '" data-key="i' + ind.id + '">' + esc(ind.id + ' ' + ind.name) + '</a></li>';
+          });
+        });
+        h += '</ul></li>';
+      });
+      h += '</ul></div>';
+    });
+    h += '</nav><div class="side-extra"><a class="side-link" href="#/plan" data-key="plan">기본계획 · 등급 기준</a><a class="side-link" href="#/changes" data-key="changes">3주기 변경사항</a><a class="side-link" href="#/search" data-key="search">검색</a></div>';
+    $side.innerHTML = h;
+    $side.addEventListener('click', function (e) { if (e.target.closest('a')) closeSide(); });
+  }
+  function markSidebar(path) {
+    var keys = [], field = null;
+    if (path.indexOf('/i/') === 0) { var ind = BY_ID[path.slice(3)]; if (ind) { field = ind._field.id; keys = ['i' + ind.id, 'f' + field, 'c' + ind._cat.id]; } }
+    else if (path.indexOf('/f/') === 0) { field = path.slice(3); var r = findField(field); keys = ['f' + field].concat(r ? ['c' + r.c.id] : []); }
+    else if (path.indexOf('/c/') === 0) keys = ['c' + path.slice(3)];
+    else if (path === '/plan' || path === '/changes' || path === '/search') keys = [path.slice(1)];
+    else keys = ['home'];
+    $side.querySelectorAll('[data-key]').forEach(function (a) {
+      var on = keys.indexOf(a.getAttribute('data-key')) >= 0;
+      a.classList.toggle('on', on);
+      if (on && keys[0] === a.getAttribute('data-key')) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    $side.querySelectorAll('.side-inds').forEach(function (u) { u.hidden = u.getAttribute('data-field') !== field; });
+  }
+  function openSide() { document.body.classList.add('side-open'); $menu.setAttribute('aria-expanded', 'true'); }
+  function closeSide() { document.body.classList.remove('side-open'); $menu.setAttribute('aria-expanded', 'false'); }
+  $menu.addEventListener('click', function () { document.body.classList.contains('side-open') ? closeSide() : openSide(); });
+  $scrim.addEventListener('click', closeSide);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSide(); });
 
   function renderTable() {
     var h = '<div class="table-wrap"><table class="sum-table"><thead><tr><th>구분</th><th>분야</th><th>영역</th><th>진단지표</th><th class="num">배점</th><th class="num">유형</th></tr></thead><tbody>';
@@ -163,7 +261,7 @@
 
     var secs = [];
     var h = '';
-    h += '<div class="crumbs"><span>' + esc(ind._cat.id + '. ' + ind._cat.name) + '</span><span>' + esc(ind._field.id + ' ' + ind._field.name) + '</span><span>' + esc(ind._area.id + ' ' + ind._area.name) + '</span></div>';
+    h += '<div class="crumbs"><span><a href="#/c/' + ind._cat.id + '">' + esc(ind._cat.id + '. ' + ind._cat.name) + '</a></span><span><a href="#/f/' + ind._field.id + '">' + esc(ind._field.id + ' ' + ind._field.name) + '</a></span><span>' + esc(ind._area.id + ' ' + ind._area.name) + '</span></div>';
     h += '<section class="card detail-head"><div class="iid">진단지표 ' + esc(ind.id) + '</div><h2>' + esc(ind.name) + '</h2><div class="chips">' + typeChip(ind.type) + '<span class="chip score">' + ind.score + '점</span>' + (ind.pages ? '<span class="chip">편람 ' + esc(ind.pages) + '쪽</span>' : '') + '</div>';
     if (ind.sub) {
       h += '<div class="subs">' + ind.sub.map(function (s) {
@@ -575,16 +673,19 @@
     var params = {};
     qs.split('&').forEach(function (kv) { if (!kv) return; var p = kv.split('='); params[p[0]] = decodeURIComponent(p[1] || ''); });
 
-    var isDetail = path.indexOf('/i/') === 0;
+    var isDetail = path.indexOf('/i/') === 0 || path.indexOf('/f/') === 0 || path.indexOf('/c/') === 0;
     $back.hidden = !isDetail;
     if (spy) { spy.disconnect(); spy = null; }
 
-    if (isDetail) viewIndicator(path.slice(3));
+    if (path.indexOf('/i/') === 0) viewIndicator(path.slice(3));
+    else if (path.indexOf('/f/') === 0) viewField(path.slice(3));
+    else if (path.indexOf('/c/') === 0) viewCategory(path.slice(3));
     else if (path === '/search') viewSearch(params.q);
     else if (path === '/plan') viewPlan();
     else if (path === '/changes') viewChanges();
     else viewHome();
 
+    markSidebar(path);
     if (path !== lastRoute) window.scrollTo(0, 0);
     lastRoute = path;
   }
@@ -604,6 +705,7 @@
     .then(function (d) {
       DATA = d;
       buildIndex();
+      renderSidebar();
       document.getElementById('footer').innerHTML = '출처 : ' + esc(d.meta.title) + ' ' + esc(d.meta.cycle) + ' (' + esc(d.meta.published) + '). 본 페이지는 열람 편의를 위한 정리본이며, 정확한 내용은 편람 원문을 확인하세요.';
       route();
     })

@@ -362,3 +362,65 @@ footer { max-width: 760px; margin: 8px auto 0; padding: 0 16px; font-size: 12px;
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* ---------- Sidebar ---------- */
+:root { --side-w: 288px; }
+.sidebar {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 40; width: min(86vw, var(--side-w));
+  background: var(--surface); border-right: 1px solid var(--line);
+  overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 12px 12px calc(24px + var(--safe-b));
+  transform: translateX(-102%); transition: transform .25s ease;
+}
+.scrim { position: fixed; inset: 0; z-index: 35; background: rgba(10, 15, 25, .45); opacity: 0; pointer-events: none; transition: opacity .25s; }
+body.side-open .sidebar { transform: none; box-shadow: 0 10px 40px rgba(0,0,0,.25); }
+body.side-open .scrim { opacity: 1; pointer-events: auto; }
+body.side-open { overflow: hidden; }
+.side-head { display: flex; flex-direction: column; padding: 8px 8px 14px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+.side-head b { font-size: 17px; }
+.side-nav, .side-extra { display: flex; flex-direction: column; gap: 2px; }
+.side-extra { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 10px; }
+.sidebar a { text-decoration: none; color: inherit; }
+.side-link { display: flex; align-items: center; gap: 8px; padding: 10px 10px; border-radius: 10px; font-size: 15px; font-weight: 600; color: var(--text-2); }
+.side-link span { margin-left: auto; font-size: 12px; color: var(--text-3); font-weight: 600; white-space: nowrap; }
+.side-link:hover, .side-cat-link:hover, .side-ind:hover { background: var(--surface-2); }
+.side-link.on { background: var(--primary-soft); color: var(--primary); }
+.side-cat { margin-top: 10px; }
+.side-cat ul { list-style: none; margin: 0; padding: 0; }
+.side-cat-link { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; font-weight: 800; font-size: 16px; }
+.side-cat-link i { font-style: normal; width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 14px; }
+.side-cat.c1 .side-cat-link i { background: var(--college-soft); color: var(--college); }
+.side-cat.c2 .side-cat-link i { background: var(--dept-soft); color: var(--dept); }
+.side-cat-link span { margin-left: auto; font-size: 12px; color: var(--text-3); }
+.side-cat-link.on[aria-current] { background: var(--surface-2); }
+.side-field { margin-left: 18px; padding-left: 12px; border-left: 2px solid var(--line); border-radius: 0 10px 10px 0; font-weight: 600; }
+.side-field em { font-style: normal; font-size: 12px; color: var(--text-3); font-weight: 700; }
+.side-cat.c1 .side-field.on { border-left-color: var(--college); background: var(--college-soft); color: var(--college); }
+.side-cat.c2 .side-field.on { border-left-color: var(--dept); background: var(--dept-soft); color: var(--dept); }
+.side-inds { margin: 2px 0 6px 32px !important; }
+.side-area { font-size: 12px; font-weight: 700; color: var(--text-3); padding: 8px 8px 2px; }
+.side-ind { display: block; font-size: 13.5px; padding: 6px 8px; border-radius: 8px; color: var(--text-2); line-height: 1.4; }
+.side-ind.on { background: var(--surface-2); color: var(--text); font-weight: 700; }
+
+.field-card { display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; }
+.field-card > div { flex: 1; min-width: 0; }
+.field-card .fid { font-size: 12px; font-weight: 800; color: var(--text-3); margin-right: 6px; }
+.field-card b { font-size: 17px; }
+.field-card .fpts { font-weight: 800; font-size: 18px; white-space: nowrap; }
+.field-card.c1 { border-left: 4px solid var(--college); }
+.field-card.c2 { border-left: 4px solid var(--dept); }
+.field-hero h2 { margin: 2px 0 0; font-size: 22px; }
+.field-hero.c1 { border-top: 4px solid var(--college); }
+.field-hero.c2 { border-top: 4px solid var(--dept); }
+.crumbs a { color: inherit; }
+
+@media (min-width: 1000px) {
+  .menu-btn { display: none; }
+  .sidebar { transform: none; top: 0; padding-top: 12px; }
+  .scrim { display: none; }
+  body.side-open { overflow: auto; }
+  .appbar, main, footer, .tabbar { margin-left: var(--side-w); }
+  .tabbar-inner { max-width: 760px; }
+  .tabbar { left: var(--side-w); margin-left: 0; }
+  .appbar-inner { max-width: 820px; }
+}
