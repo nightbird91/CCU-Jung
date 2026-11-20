@@ -1,0 +1,613 @@
+/* 전공심화 운영진단 편람 열람 – 빌드 없는 정적 SPA (hash routing) */
+(function () {
+  'use strict';
+
+  var DATA = null;
+  var INDEX = [];        // 평탄화된 지표 목록 (순서 유지)
+  var BY_ID = {};
+  var state = { filter: '전체', view: 'tree', query: '' };
+
+  var $app = document.getElementById('app');
+  var $title = document.getElementById('pageTitle');
+  var $back = document.getElementById('backBtn');
+  var $top = document.getElementById('topBtn');
+
+  try { var saved = localStorage.getItem('jsh-view'); if (saved) state.view = saved; } catch (e) {}
+
+  /* ---------- utils ---------- */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function fmt(n, d) {
+    if (!isFinite(n)) return '–';
+    d = d == null ? 2 : d;
+    return Number(n.toFixed(d)).toLocaleString('ko-KR', { maximumFractionDigits: d });
+  }
+  function caret() {
+    return '<svg class="caret" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+  }
+  function typeChip(t) { return '<span class="chip ' + esc(t) + '">' + esc(t) + '</span>'; }
+  function setTitle(main, sub) {
+    $title.innerHTML = esc(main) + (sub ? '<small>' + esc(sub) + '</small>' : '');
+    document.title = main === '전공심화 운영진단 편람' ? main : main + ' · 전공심화 운영진단 편람';
+  }
+  function setTab(name) {
+    document.querySelectorAll('.tabbar a').forEach(function (a) {
+      a.classList.toggle('on', a.getAttribute('data-tab') === name);
+      if (a.getAttribute('data-tab') === name) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+  }
+
+  /* ---------- data ---------- */
+  function buildIndex() {
+    DATA.categories.forEach(function (c) {
+      c.fields.forEach(function (f) {
+        f.areas.forEach(function (a) {
+          a.indicators.forEach(function (ind) {
+            ind._cat = c; ind._field = f; ind._area = a;
+            INDEX.push(ind); BY_ID[ind.id] = ind;
+          });
+        });
+      });
+    });
+  }
+
+  function qualRows(n, points) {
+    var L = DATA.qualScaleLabels;
+    var crit;
+    if (n === 3) {
+      crit = ['3개 진단요소 모두 실적 우수함', '3개 진단요소 중 2개 요소의 실적 우수함', '3개 진단요소 중 1개 요소의 실적 우수함', '3개 진단요소 모두 실적이 미흡', '1개 이상 실적(내용) 없음'];
+    } else {
+      crit = ['4개 진단요소 모두 실적 우수', '4개 진단요소 중 3개 요소의 실적 우수', '4개 진단요소 중 2개 요소의 실적 우수', '4개 진단요소 중 1개 요소의 실적 우수', '4개 진단요소 모두 실적 미흡 또는 1개 이상 실적(내용) 없음'];
+    }
+    return L.map(function (l, i) { return [l, crit[i], points[i]]; });
+  }
+
+  /* ---------- views ---------- */
+  function viewHome() {
+    setTitle('전공심화 운영진단 편람', DATA.meta.cycle);
+    setTab('home');
+    var types = ['전체', '정량', '정성', '혼합'];
+    var counts = { '전체': INDEX.length, '정량': 0, '정성': 0, '혼합': 0 };
+    INDEX.forEach(function (i) { counts[i.type]++; });
+
+    var h = '';
+    h += '<section class="card summary">' +
+      '<div class="muted">' + esc(DATA.meta.edition) + ' · ' + esc(DATA.meta.published) + '</div>' +
+      '<div class="total"><b>100점</b><span class="muted">총 ' + INDEX.length + '개 진단지표</span></div>' +
+      '<div class="bar" role="img" aria-label="대학 15점, 학과 85점"><span class="c" style="width:15%"></span><span class="d" style="width:85%"></span></div>' +
+      '<div class="legend"><span><i style="background:var(--college)"></i>대학 15점 · 3개 지표</span><span><i style="background:var(--dept)"></i>학과 85점 · 12개 지표</span><span><i style="background:var(--minus)"></i>감점 최대 −2점</span></div>' +
+      '</section>';
+
+    h += '<div class="filters" role="group" aria-label="유형 필터">';
+    types.forEach(function (t) {
+      h += '<button class="filter" data-filter="' + t + '" aria-pressed="' + (state.filter === t) + '">' + t + ' ' + counts[t] + '</button>';
+    });
+    h += '<button class="filter view-toggle" data-view aria-pressed="' + (state.view === 'table') + '">' + (state.view === 'table' ? '카드로 보기' : '총괄표로 보기') + '</button>';
+    h += '</div>';
+
+    h += state.view === 'table' ? renderTable() : renderTree();
+    $app.innerHTML = h;
+
+    $app.querySelectorAll('[data-filter]').forEach(function (b) {
+      b.addEventListener('click', function () { state.filter = b.getAttribute('data-filter'); viewHome(); });
+    });
+    $app.querySelector('[data-view]').addEventListener('click', function () {
+      state.view = state.view === 'table' ? 'tree' : 'table';
+      try { localStorage.setItem('jsh-view', state.view); } catch (e) {}
+      viewHome();
+    });
+  }
+
+  function match(ind) { return state.filter === '전체' || ind.type === state.filter; }
+
+  function renderTree() {
+    var h = '';
+    DATA.categories.forEach(function (c) {
+      var catInds = 0;
+      var body = '';
+      c.fields.forEach(function (f) {
+        var fb = '';
+        f.areas.forEach(function (a) {
+          var items = a.indicators.filter(match);
+          if (!items.length) return;
+          catInds += items.length;
+          fb += '<details class="area" open><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts">' + a.score + '점</span></summary><ul class="ind-list">';
+          items.forEach(function (ind) {
+            fb += '<li><a class="ind" href="#/i/' + ind.id + '">' +
+              '<span class="iid">' + esc(ind.id) + '</span>' +
+              '<span class="iname">' + esc(ind.name) + '</span>' +
+              (ind.sub ? '<span class="ind-sub">' + ind.sub.map(function (s) { return esc(s.no + ' ' + s.name + ' (' + s.score + ')'); }).join('<br>') + '</span>' : '') +
+              '<span class="ichips">' + typeChip(ind.type) + '</span>' +
+              '<span class="ipts">' + ind.score + '<small>점</small></span>' +
+              '</a></li>';
+          });
+          fb += '</ul></details>';
+        });
+        if (fb) {
+          body += '<div class="field"><div class="field-head"><span class="fid">' + esc(f.id) + '</span><h3>' + esc(f.name) + '</h3><span class="fpts">' + f.score + '점</span></div>' + fb + '</div>';
+        }
+      });
+      if (!catInds) return;
+      h += '<section class="card cat c' + c.id + '"><div class="cat-head"><div class="cat-badge">' + esc(c.id) + '</div><div><div class="meta">구분</div><h2>' + esc(c.name) + '</h2></div><div class="pts">' + c.score + '<small>점</small></div></div>' + body;
+      if (c.id === '2' && state.filter === '전체') {
+        h += '<div class="deduction"><span class="chip">감점</span><span>' + esc(DATA.deduction.name) + '</span><b>' + DATA.deduction.score + '</b></div>';
+      }
+      h += '</section>';
+    });
+    return h || '<p class="empty">해당 유형의 지표가 없습니다.</p>';
+  }
+
+  function renderTable() {
+    var h = '<div class="table-wrap"><table class="sum-table"><thead><tr><th>구분</th><th>분야</th><th>영역</th><th>진단지표</th><th class="num">배점</th><th class="num">유형</th></tr></thead><tbody>';
+    INDEX.filter(match).forEach(function (ind) {
+      h += '<tr><td>' + esc(ind._cat.id + '. ' + ind._cat.name) + '</td><td>' + esc(ind._field.id + ' ' + ind._field.name) + '</td><td>' + esc(ind._area.id + ' ' + ind._area.name) + '</td>' +
+        '<td><a href="#/i/' + ind.id + '">' + esc(ind.id + ' ' + ind.name) + '</a>' +
+        (ind.sub ? '<div class="muted">' + ind.sub.map(function (s) { return esc(s.no + ' ' + s.name + ' (' + s.score + ', ' + s.type + ')'); }).join('<br>') + '</div>' : '') +
+        '</td><td class="num"><b>' + ind.score + '</b></td><td class="num">' + typeChip(ind.type) + '</td></tr>';
+    });
+    if (state.filter === '전체') {
+      h += '<tr><td colspan="3">감점(최대 −2점)</td><td>' + esc(DATA.deduction.name) + '</td><td class="num"><b>−2</b></td><td class="num">' + typeChip('정량') + '</td></tr>';
+    }
+    h += '</tbody></table></div><p class="muted" style="margin:8px 4px">표는 좌우로 밀어서 볼 수 있습니다.</p>';
+    return h;
+  }
+
+  function viewIndicator(id) {
+    var ind = BY_ID[id];
+    if (!ind) { $app.innerHTML = '<p class="empty">지표를 찾을 수 없습니다.</p>'; return; }
+    setTitle(ind.id + ' ' + ind.name, ind._cat.name + ' · ' + ind._area.name);
+    setTab('home');
+
+    var secs = [];
+    var h = '';
+    h += '<div class="crumbs"><span>' + esc(ind._cat.id + '. ' + ind._cat.name) + '</span><span>' + esc(ind._field.id + ' ' + ind._field.name) + '</span><span>' + esc(ind._area.id + ' ' + ind._area.name) + '</span></div>';
+    h += '<section class="card detail-head"><div class="iid">진단지표 ' + esc(ind.id) + '</div><h2>' + esc(ind.name) + '</h2><div class="chips">' + typeChip(ind.type) + '<span class="chip score">' + ind.score + '점</span>' + (ind.pages ? '<span class="chip">편람 ' + esc(ind.pages) + '쪽</span>' : '') + '</div>';
+    if (ind.sub) {
+      h += '<div class="subs">' + ind.sub.map(function (s) {
+        return '<div class="sub"><span class="no">' + esc(s.no) + '</span><span class="nm">' + esc(s.name) + '</span>' + typeChip(s.type) + '<b>' + s.score + '점</b></div>';
+      }).join('') + '</div>';
+    }
+    h += '</section>';
+
+    // sections
+    var body = '';
+    function sec(key, title, html) { secs.push([key, title]); body += '<section class="card sec" id="s-' + key + '"><h3>' + esc(title) + '</h3>' + html + '</section>'; }
+
+    var ov = '';
+    if (ind.notes) ov += ind.notes.map(function (n) { return '<div class="callout warn" style="margin:0 0 12px">' + esc(n) + '</div>'; }).join('');
+    ov += '<h4 style="margin-top:0">진단 방향</h4><ul class="dots">' + ind.direction.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>';
+    if (ind.definitions) ov += '<h4>용어의 정의</h4><ul class="dots">' + ind.definitions.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>';
+    sec('ov', '개요', ov);
+
+    var el = '<ul class="el-list">';
+    ind.elements.forEach(function (e) {
+      if (e.group) { el += '<li class="el-group">' + esc(e.group) + '</li>'; return; }
+      el += '<li class="el-item"><span class="t">' + esc(e.text) + '</span>' + (e.ev ? '<span class="ev">증빙 ' + esc(e.ev) + '</span>' : '') + '</li>';
+    });
+    el += '</ul>';
+    if (ind.evidence) {
+      el += '<h4>증빙자료</h4><ul class="plain">' + ind.evidence.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>';
+      el += '<div class="callout">※ 증빙자료 미제출 시 해당 진단요소 실적 미인정</div>';
+    }
+    sec('el', '진단요소', el);
+
+    if (ind.forms && ind.forms.length) {
+      var fm = '<p class="muted" style="margin-top:-4px">항목을 누르면 작성 지침이 펼쳐집니다.</p>';
+      ind.forms.forEach(function (f) {
+        var kind = f.label.indexOf('표') === 0 ? '표' : '기술';
+        fm += '<details class="form"><summary><span class="lbl ' + kind + '">' + esc(f.label) + '</span><span class="ttl">' + esc(f.title) + '</span>' + caret() + '</summary><div class="form-body">';
+        if (f.columns) fm += '<div class="muted">작성 항목</div><div class="cols">' + f.columns.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div>';
+        if (f.guide && f.guide.length) fm += '<div class="muted">작성 지침</div><ul class="dots">' + f.guide.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>';
+        fm += '</div></details>';
+      });
+      sec('fm', '작성자료·지침', fm);
+    }
+
+    var sc = '';
+    if (ind.formulas) {
+      sc += '<div class="scale-title">산출 방법</div>' + ind.formulas.map(function (f) { return '<div class="formula">' + esc(f) + '</div>'; }).join('');
+    }
+    ind.scales.forEach(function (s) {
+      if (s.kind === 'qual') {
+        sc += '<div class="scale-title">' + esc(s.title || ('진단 척도 (정성, ' + s.points[0] + '점)')) + '</div>';
+        sc += '<div class="table-wrap"><table class="qual-scale"><thead><tr><th>진단</th><th>진단 기준</th><th class="num">배점</th></tr></thead><tbody>' +
+          qualRows(s.n, s.points).map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><td>' + r[2] + '</td></tr>'; }).join('') + '</tbody></table></div>';
+      } else {
+        sc += '<div class="scale-title">' + esc(s.title) + '</div>';
+        if (s.rows.length === 1) {
+          // 한 줄짜리 척도표는 휴대폰에서 읽기 쉽게 세로(기준 | 배점)로 바꿔서 표시
+          sc += '<div class="table-wrap"><table class="vert-scale"><thead><tr><th>' + esc(s.headers[0]) + '</th><th class="num">' + esc(s.rows[0][0]) + '</th></tr></thead><tbody>' +
+            s.headers.slice(1).map(function (hd, i) { return '<tr><td>' + esc(hd) + '</td><td class="num"><b>' + esc(s.rows[0][i + 1]) + '</b></td></tr>'; }).join('') + '</tbody></table></div>';
+        } else {
+          sc += '<div class="table-wrap"><table><thead><tr>' + s.headers.map(function (x, i) { return '<th' + (i ? ' class="num"' : '') + '>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+            s.rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td' + (i ? ' class="num"' : '') + '>' + esc(x) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+        }
+        if (s.note) sc += '<div class="callout">※ ' + esc(s.note) + '</div>';
+      }
+    });
+    if (ind.calc && CALCS[ind.calc]) sc += CALCS[ind.calc].html();
+    sec('sc', '진단척도', sc);
+
+    if (ind.changes) {
+      sec('ch', '3주기 변경', '<ul class="dots change-list">' + ind.changes.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>');
+    }
+
+    h += '<nav class="toc" aria-label="지표 내 이동">' + secs.map(function (s) { return '<a href="#s-' + s[0] + '" data-sec="' + s[0] + '">' + esc(s[1]) + '</a>'; }).join('') + '</nav>';
+    h += body;
+
+    var pos = INDEX.indexOf(ind);
+    var prev = INDEX[pos - 1], next = INDEX[pos + 1];
+    h += '<div class="pager">' +
+      (prev ? '<a href="#/i/' + prev.id + '"><small>‹ 이전 지표</small>' + esc(prev.id + ' ' + prev.name) + '</a>' : '<span class="ghost"></span>') +
+      (next ? '<a class="next" href="#/i/' + next.id + '"><small>다음 지표 ›</small>' + esc(next.id + ' ' + next.name) + '</a>' : '<span class="ghost"></span>') +
+      '</div>';
+
+    $app.innerHTML = h;
+    if (ind.calc && CALCS[ind.calc]) CALCS[ind.calc].bind($app);
+
+    // in-page nav (hash is used for routing, so scroll manually)
+    $app.querySelectorAll('.toc a').forEach(function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        var t = document.getElementById('s-' + a.getAttribute('data-sec'));
+        if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 112, behavior: 'smooth' });
+      });
+    });
+    setupScrollSpy();
+  }
+
+  var spy = null;
+  function setupScrollSpy() {
+    if (spy) spy.disconnect();
+    if (!('IntersectionObserver' in window)) return;
+    var links = {};
+    $app.querySelectorAll('.toc a').forEach(function (a) { links['s-' + a.getAttribute('data-sec')] = a; });
+    spy = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (en.isIntersecting) {
+          Object.keys(links).forEach(function (k) { links[k].classList.toggle('on', k === en.target.id); });
+          var on = links[en.target.id];
+          if (on && on.scrollIntoView) on.parentNode.scrollTo({ left: on.offsetLeft - 16, behavior: 'smooth' });
+        }
+      });
+    }, { rootMargin: '-120px 0px -60% 0px' });
+    $app.querySelectorAll('section.sec').forEach(function (s) { spy.observe(s); });
+  }
+
+  /* ---------- calculators (참고용) ---------- */
+  function num(root, name) {
+    var el = root.querySelector('[name="' + name + '"]');
+    if (!el || el.value === '') return NaN;
+    return parseFloat(String(el.value).replace(/,/g, ''));
+  }
+  function calcBox(title, fields, note) {
+    return '<div class="calc" data-calc><h4>' + esc(title) + '</h4><div class="muted">값을 입력하면 편람 산식에 따라 점수를 계산합니다. (참고용 · 소수점 처리는 편람 기준 확인)</div><div class="grid">' +
+      fields + '</div><div class="out" data-out><span class="muted">값을 입력하세요.</span></div>' + (note ? '<div class="muted" style="margin-top:8px">' + esc(note) + '</div>' : '') + '</div>';
+  }
+  function inp(name, label, full, ph) {
+    return '<label' + (full ? ' class="full"' : '') + '>' + esc(label) + '<input type="number" inputmode="decimal" name="' + name + '" placeholder="' + esc(ph || '') + '"></label>';
+  }
+  function outRows(rows) {
+    return rows.map(function (r) { return '<div class="row"><span>' + esc(r[0]) + '</span>' + (r[2] ? '<b>' + r[1] + '</b>' : '<span>' + r[1] + '</span>') + '</div>'; }).join('');
+  }
+  function bindCalc(root, fn) {
+    var box = root.querySelector('[data-calc]');
+    if (!box) return;
+    var out = box.querySelector('[data-out]');
+    var run = function () { var r = fn(box); out.innerHTML = r || '<span class="muted">값을 입력하세요.</span>'; };
+    box.addEventListener('input', run);
+    box.addEventListener('change', run);
+  }
+  function band(v, hi, lo, hiPts, loPts, mid) {
+    if (v >= hi) return hiPts;
+    if (v <= lo) return loPts;
+    return mid(v);
+  }
+
+  var CALCS = {
+    fulltime: {
+      html: function () { return calcBox('① 전임교원 강의담당 비율 점수 계산', inp('A', '총 개설학점 수 [A]') + inp('B', '전임교원 담당학점 [B]')); },
+      bind: function (root) {
+        bindCalc(root, function (b) {
+          var A = num(b, 'A'), B = num(b, 'B');
+          if (!(A > 0) || !(B >= 0)) return '';
+          var C = B / A * 100;
+          var s = band(C, 30, 6, 2, 0.4, function (c) { return c / 15; });
+          return outRows([['담당비율 [C]', fmt(C) + '%'], ['강의담당 지수 [D=C/15]', C > 6 && C < 30 ? fmt(C / 15) : '해당 없음'], ['예상 배점 (2점 만점)', fmt(s) + '점', 1]]);
+        });
+      }
+    },
+    finance: {
+      html: function () {
+        return calcBox('재정 지원 점수 계산',
+          inp('A1', '① 실험실습비 총액(원) [A]', true) + inp('B1', '① 재학생수(명) [B]', true) +
+          inp('A2', '② 등록금 수입 총액(원) [A]', true) + inp('B2', '② 장학금 지급 총액(원) [B]', true));
+      },
+      bind: function (root) {
+        bindCalc(root, function (b) {
+          var rows = [], total = 0, ok = 0;
+          var A1 = num(b, 'A1'), B1 = num(b, 'B1');
+          if (A1 >= 0 && B1 > 0) {
+            var C1 = A1 / B1;
+            var s1 = band(C1, 172000, 57333, 4, 1, function (c) { return 3 / (172000 - 57333) * c - 0.5; });
+            rows.push(['① 1인당 실험실습비 [C]', fmt(C1, 0) + '원'], ['① 배점 (4점 만점)', fmt(s1) + '점', 1]);
+            total += s1; ok++;
+          }
+          var A2 = num(b, 'A2'), B2 = num(b, 'B2');
+          if (A2 > 0 && B2 >= 0) {
+            var C2 = B2 / A2 * 100;
+            var s2 = band(C2, 10, 3.33, 4, 1, function (c) { return 3 / (10 - 3.33) * c - 0.5; });
+            rows.push(['② 등록금 대비 장학금 비율 [C]', fmt(C2) + '%'], ['② 배점 (4점 만점)', fmt(s2) + '점', 1]);
+            total += s2; ok++;
+          }
+          if (!ok) return '';
+          if (ok === 2) rows.push(['합계 (8점 만점)', fmt(total) + '점', 1]);
+          return outRows(rows);
+        });
+      }
+    },
+    credits: {
+      html: function () {
+        return calcBox('② 학기당 편성학점 지수 계산',
+          inp('y1s1', '1학년 1학기 편성학점') + inp('y1s2', '1학년 2학기 편성학점') +
+          inp('y2s1', '2학년 1학기 (1년 과정은 비움)') + inp('y2s2', '2학년 2학기 (1년 과정은 비움)'));
+      },
+      bind: function (root) {
+        bindCalc(root, function (b) {
+          var a = num(b, 'y1s1'), c = num(b, 'y1s2'), d = num(b, 'y2s1'), e = num(b, 'y2s2');
+          if (!(a >= 0 && c >= 0)) return '';
+          var two = d >= 0 && e >= 0;
+          var sum = a + c + (two ? d + e : 0), n = two ? 4 : 2;
+          var idx = sum / n;
+          var s = idx >= 15 ? 2 : idx >= 14 ? 1.6 : idx >= 13 ? 1.2 : idx >= 12 ? 0.8 : 0.4;
+          return outRows([['과정', two ? '2년 과정' : '1년 과정'], ['학기당 편성학점 지수', fmt(idx)], ['예상 배점 (2점 만점)', s + '점', 1]]);
+        });
+      }
+    },
+    enroll: {
+      html: function () { return calcBox('재학생 충원율 점수 계산', inp('A', '학생정원(명) [A]') + inp('B', '재학생(명) [B]')); },
+      bind: function (root) {
+        bindCalc(root, function (b) {
+          var A = num(b, 'A'), B = num(b, 'B');
+          if (!(A > 0) || !(B >= 0)) return '';
+          var C = B / A * 100;
+          var s = band(C, 80, 30, 10, 2, function (c) { return 8 / 50 * c - 2.8; });
+          return outRows([['재학생 충원율 [C]', fmt(C) + '%'], ['예상 배점 (10점 만점)', fmt(s) + '점', 1]]);
+        });
+      }
+    },
+    employ: {
+      html: function () { return calcBox('졸업생 취업률 점수 계산', inp('A', '졸업자(명) [A]') + inp('B', '취업자(명) [B]') + inp('C', '취업제외 대상자(명) [C]', true)); },
+      bind: function (root) {
+        bindCalc(root, function (b) {
+          var A = num(b, 'A'), B = num(b, 'B'), C = num(b, 'C');
+          if (isNaN(C)) C = 0;
+          if (!(A - C > 0) || !(B >= 0)) return '';
+          var D = B / (A - C) * 100;
+          var s = band(D, 70, 30, 10, 2, function (d) { return d / 5 - 4; });
+          return outRows([['졸업생 취업률 [D]', fmt(D) + '%'], ['예상 배점 (10점 만점)', fmt(s) + '점', 1]]);
+        });
+      }
+    },
+    staff: {
+      html: function () {
+        return calcBox('운영조직 및 지원 계산',
+          '<label class="full">편제정원<select name="band"><option value="0">200명 이상</option><option value="1">100명 이상~200명 미만</option><option value="2">100명 미만</option></select></label>' +
+          inp('dA', '전담직원 수 [A]') + inp('dB', '겸직직원 수 [B]') +
+          '<label class="full">전담부서(센터) 운영<select name="center"><option value="0">미운영</option><option value="1">운영 (+0.5명)</option></select></label>' +
+          inp('eT', '② 전임교원 수') + inp('eH', '② 외부교육 3시간 이상 참여(명)') + inp('eL', '② 외부교육 3시간 미만 참여(명)') + inp('eI', '② 내부교육 참여(명)'),
+          '② 교육지수 배점표는 편람 원문(0.5 이상 3점, 0.5 2.5점, 0.4 2.0점, 0.3 1.5점, 0.2 미만 1.0점)을 참고하세요.');
+      },
+      bind: function (root) {
+        var T = [[2.5, 2.0, 1.5, 1.0, 0.5], [2.0, 1.5, 1.0, 0.5], [1.5, 1.0, 0.5]];
+        var P = [5, 4, 3, 2, 1];
+        bindCalc(root, function (b) {
+          var rows = [];
+          var A = num(b, 'dA'), B = num(b, 'dB');
+          var center = b.querySelector('[name="center"]').value === '1';
+          var bnd = +b.querySelector('[name="band"]').value;
+          if (A >= 0 || B >= 0) {
+            A = A >= 0 ? A : 0; B = B >= 0 ? B : 0;
+            var conv = A + Math.min(B, 3) * 0.5 + (center ? 0.5 : 0);
+            var s = null;
+            for (var i = 0; i < T[bnd].length; i++) { if (conv >= T[bnd][i] - 1e-9) { s = P[i]; break; } }
+            rows.push(['① 환산 인원 계', fmt(conv) + '명'], ['① 예상 배점 (5점 만점)', s == null ? '표 기준 미달' : s + '점', 1]);
+            var t = num(b, 'eT');
+            if (t >= 0) {
+              var C = (num(b, 'eH') || 0) + (num(b, 'eL') || 0) * 0.5 + (num(b, 'eI') || 0) * 0.25;
+              var den = t + A + B;
+              rows.push(['② 교육참여자 환산값 [C]', fmt(C) + '명'], ['② 교육 지수 [D=C/(A+B)]', den > 0 ? fmt(C / den, 3) : '–', 1]);
+            }
+          }
+          return rows.length ? outRows(rows) : '';
+        });
+      }
+    }
+  };
+
+  /* ---------- search ---------- */
+  function searchDocs() {
+    var docs = [];
+    INDEX.forEach(function (ind) {
+      var push = function (where, text) { docs.push({ ind: ind, where: where, text: text }); };
+      push('지표명', ind.id + ' ' + ind.name);
+      (ind.sub || []).forEach(function (s) { push('세부지표', s.no + ' ' + s.name); });
+      ind.direction.forEach(function (t) { push('진단 방향', t); });
+      (ind.definitions || []).forEach(function (t) { push('용어의 정의', t); });
+      ind.elements.forEach(function (e) { if (e.text) push('진단요소', e.text); });
+      (ind.evidence || []).forEach(function (t) { push('증빙자료', t); });
+      (ind.forms || []).forEach(function (f) {
+        push('작성자료 <' + f.label + '>', f.title);
+        (f.guide || []).forEach(function (g) { push('작성지침 <' + f.label + '>', g); });
+      });
+      (ind.formulas || []).forEach(function (t) { push('산출방법', t); });
+      (ind.changes || []).forEach(function (t) { push('3주기 변경', t); });
+    });
+    return docs;
+  }
+  var DOCS = null;
+
+  function highlight(text, q) {
+    var safe = esc(text);
+    if (!q) return safe;
+    var terms = q.split(/\s+/).filter(Boolean).map(function (t) { return esc(t).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); });
+    if (!terms.length) return safe;
+    return safe.replace(new RegExp('(' + terms.join('|') + ')', 'gi'), '<mark>$1</mark>');
+  }
+  function snippet(text, q) {
+    var t = q.split(/\s+/).filter(Boolean)[0] || '';
+    var i = text.toLowerCase().indexOf(t.toLowerCase());
+    if (i < 0 || text.length <= 90) return text;
+    var s = Math.max(0, i - 30);
+    return (s > 0 ? '…' : '') + text.slice(s, s + 90) + (s + 90 < text.length ? '…' : '');
+  }
+
+  function viewSearch(q) {
+    setTitle('검색', '지표명·진단요소·증빙자료·작성지침');
+    setTab('search');
+    if (!DOCS) DOCS = searchDocs();
+    state.query = q || '';
+    var sugg = ['산업체', '자체평가', '환류', '증빙', '외국인 유학생', '재학생', '예산', '4월 1일', '만족도', '실험실습'];
+    $app.innerHTML = '<div class="search-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>' +
+      '<input id="q" type="search" enterkeyhint="search" placeholder="예: 산업체, 환류, 4월 1일" value="' + esc(state.query) + '" autocomplete="off">' +
+      '<button class="icon-btn clear" id="qc" aria-label="지우기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+      '<div class="suggest">' + sugg.map(function (s) { return '<button class="filter" data-s="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div>' +
+      '<div id="results"></div>';
+    var $q = document.getElementById('q');
+    var run = function () {
+      var v = $q.value.trim();
+      state.query = v;
+      history.replaceState(null, '', '#/search' + (v ? '?q=' + encodeURIComponent(v) : ''));
+      renderResults(v);
+    };
+    $q.addEventListener('input', run);
+    document.getElementById('qc').addEventListener('click', function () { $q.value = ''; run(); $q.focus(); });
+    $app.querySelectorAll('[data-s]').forEach(function (b) { b.addEventListener('click', function () { $q.value = b.getAttribute('data-s'); run(); }); });
+    renderResults(state.query);
+    if (!state.query) setTimeout(function () { $q.focus(); }, 50);
+  }
+
+  function renderResults(q) {
+    var $r = document.getElementById('results');
+    if (!q) { $r.innerHTML = '<p class="empty">검색어를 입력하거나 위 추천어를 눌러 보세요.</p>'; return; }
+    var terms = q.toLowerCase().split(/\s+/).filter(Boolean);
+    var groups = {}, order = [];
+    DOCS.forEach(function (d) {
+      var t = d.text.toLowerCase();
+      if (terms.every(function (x) { return t.indexOf(x) >= 0; })) {
+        if (!groups[d.ind.id]) { groups[d.ind.id] = []; order.push(d.ind.id); }
+        groups[d.ind.id].push(d);
+      }
+    });
+    if (!order.length) { $r.innerHTML = '<p class="empty">"' + esc(q) + '"에 대한 결과가 없습니다.</p>'; return; }
+    var total = order.reduce(function (n, id) { return n + groups[id].length; }, 0);
+    var h = '<p class="muted" style="margin:4px 4px 10px">' + order.length + '개 지표에서 ' + total + '건</p>';
+    order.forEach(function (id) {
+      var ind = BY_ID[id], hits = groups[id];
+      h += '<a class="card result" href="#/i/' + id + '"><div style="display:flex;gap:8px;align-items:center"><span class="chip score">' + esc(id) + '</span><b style="flex:1">' + highlight(ind.name, q) + '</b>' + typeChip(ind.type) + '</div>';
+      hits.slice(0, 3).forEach(function (d) {
+        if (d.where === '지표명') return;
+        h += '<div class="where">' + esc(d.where) + '</div><div class="snip">' + highlight(snippet(d.text, q), q) + '</div>';
+      });
+      if (hits.length > 3) h += '<div class="where">외 ' + (hits.length - 3) + '건 더 있음</div>';
+      h += '</a>';
+    });
+    $r.innerHTML = h;
+  }
+
+  /* ---------- plan ---------- */
+  function viewPlan() {
+    var P = DATA.plan;
+    setTitle('운영진단 기본계획', DATA.meta.cycle);
+    setTab('plan');
+    var h = '';
+    h += '<section class="card"><h3 style="margin:0 0 8px">등급 부여 및 활용</h3><p class="muted" style="margin:0 0 6px">' + esc(P.gradeNote) + '</p>';
+    P.grades.forEach(function (g) {
+      h += '<div class="grade"><div class="g ' + g.grade + '">' + g.grade + '</div><div><div class="rng">' + esc(g.label) + ' · ' + esc(g.range) + '</div><dl><dt>당해년</dt><dd>' + esc(g.y1) + '</dd><dt>2차년</dt><dd>' + esc(g.y2) + '</dd><dt>3차년</dt><dd>' + esc(g.y3) + '</dd></dl></div></div>';
+    });
+    h += '</section>';
+
+    h += '<section class="card"><h3 style="margin:0 0 8px">진단 내용</h3><ul class="dots">' + P.content.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>' +
+      '<h4>정량 자료 활용</h4><ul class="dots">' + P.quantData.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></section>';
+
+    h += '<section class="card"><h3 style="margin:0 0 8px">연차별 대상 및 시기</h3><ul class="timeline">' + P.schedule.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul><div class="callout">※ ' + esc(P.scheduleNote) + '</div></section>';
+
+    h += '<section class="card"><h3 style="margin:0 0 8px">진단 대상 <span class="muted">(' + esc(P.target.base) + ')</span></h3><ul class="dots">' + P.target.items.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul><h4>진단 제외 대상</h4><ul class="dots">' + P.target.excluded.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></section>';
+
+    h += '<section class="card"><h3 style="margin:0 0 8px">정량요소 총괄표</h3><div class="table-wrap"><table><thead><tr><th>진단지표</th><th>정량요소</th><th>근거자료</th><th>자료기준</th><th class="num">공시시기</th></tr></thead><tbody>' +
+      DATA.quantSummary.map(function (q) { return '<tr><td>' + esc(q.indicator) + '</td><td>' + esc(q.element) + '</td><td>' + esc(q.source) + '</td><td>' + esc(q.base) + '</td><td class="num">' + esc(q.disclosure) + '</td></tr>'; }).join('') +
+      '</tbody></table></div><p class="muted" style="margin:8px 0 0">표는 좌우로 밀어서 볼 수 있습니다.</p></section>';
+
+    h += '<section class="card"><h3 style="margin:0 0 8px">기본방향</h3><div class="kv">' + P.principles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></section>';
+
+    h += '<section class="card"><h3 style="margin:0 0 8px">추진 체계</h3><div class="kv">' + P.roles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></section>';
+
+    h += '<section class="card"><h3 style="margin:0 0 8px">추진배경 및 질 관리체계 변화</h3><ul class="dots">' + P.background.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul><h4>연혁</h4><ul class="timeline">' + P.history.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul></section>';
+    $app.innerHTML = h;
+  }
+
+  /* ---------- changes ---------- */
+  function viewChanges() {
+    setTitle('3주기 변경사항', '2주기 대비 주요 개선 내용');
+    setTab('changes');
+    var h = '<h3 class="section-title" style="margin-top:4px">운영진단 체계</h3>';
+    DATA.changes.system.forEach(function (c) {
+      h += '<section class="card"><b>' + esc(c.title) + '</b><div class="ba"><div><em>기존</em>' + esc(c.before) + '</div><div class="after"><em>개선</em>' + esc(c.after) + '</div></div><p class="muted" style="margin:8px 0 0">사유 · ' + esc(c.reason) + '</p></section>';
+    });
+    h += '<h3 class="section-title">지표별 변경</h3>';
+    INDEX.forEach(function (ind) {
+      if (!ind.changes) return;
+      var none = ind.changes.length === 1 && ind.changes[0].indexOf('변경 없음') >= 0;
+      h += '<a class="card result" href="#/i/' + ind.id + '" style="' + (none ? 'opacity:.7' : '') + '"><div style="display:flex;gap:8px;align-items:center"><span class="chip score">' + esc(ind.id) + '</span><b style="flex:1">' + esc(ind.name) + '</b>' + typeChip(ind.type) + '</div><ul class="dots" style="margin-top:8px;font-size:14px;color:var(--text-2)">' + ind.changes.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></a>';
+    });
+    $app.innerHTML = h;
+  }
+
+  /* ---------- router ---------- */
+  var lastRoute = '';
+  function route() {
+    var hash = location.hash.replace(/^#/, '') || '/';
+    var path = hash.split('?')[0];
+    var qs = hash.indexOf('?') >= 0 ? hash.slice(hash.indexOf('?') + 1) : '';
+    var params = {};
+    qs.split('&').forEach(function (kv) { if (!kv) return; var p = kv.split('='); params[p[0]] = decodeURIComponent(p[1] || ''); });
+
+    var isDetail = path.indexOf('/i/') === 0;
+    $back.hidden = !isDetail;
+    if (spy) { spy.disconnect(); spy = null; }
+
+    if (isDetail) viewIndicator(path.slice(3));
+    else if (path === '/search') viewSearch(params.q);
+    else if (path === '/plan') viewPlan();
+    else if (path === '/changes') viewChanges();
+    else viewHome();
+
+    if (path !== lastRoute) window.scrollTo(0, 0);
+    lastRoute = path;
+  }
+
+  $back.addEventListener('click', function () {
+    var navigated = false;
+    try { navigated = !!sessionStorage.getItem('jsh-nav'); } catch (e) {}
+    if (navigated) history.back();
+    else location.hash = '#/';
+  });
+  window.addEventListener('hashchange', function () { try { sessionStorage.setItem('jsh-nav', '1'); } catch (e) {} route(); });
+  window.addEventListener('scroll', function () { $top.classList.toggle('show', window.scrollY > 600); }, { passive: true });
+  $top.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+  fetch('data/manual.json', { cache: 'no-cache' })
+    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(function (d) {
+      DATA = d;
+      buildIndex();
+      document.getElementById('footer').innerHTML = '출처 : ' + esc(d.meta.title) + ' ' + esc(d.meta.cycle) + ' (' + esc(d.meta.published) + '). 본 페이지는 열람 편의를 위한 정리본이며, 정확한 내용은 편람 원문을 확인하세요.';
+      route();
+    })
+    .catch(function (e) {
+      $app.innerHTML = '<p class="empty">데이터를 불러오지 못했습니다 (' + esc(e.message) + ').<br>로컬 파일로 열었다면 웹 서버(GitHub Pages 등)를 통해 열어 주세요.</p>';
+    });
+})();
