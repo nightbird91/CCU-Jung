@@ -905,3 +905,9 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
   .hero-text, .hero-text[class] { padding: 0 60px !important; }
 }
 @media (min-width: 1000px) { .hero #settingsBtn { right: 24px; } }
+/* 상단 아이콘 버튼 축소: 보이는 원 34px, 터치 범위 44px */
+@media (max-width: 999px) {
+  .hero #settingsBtn, .hero #menuBtn { width: 34px; height: 34px; }
+  .hero #settingsBtn svg, .hero #menuBtn svg { width: 18px; height: 18px; }
+  .hero #settingsBtn::after, .hero #menuBtn::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
+}
