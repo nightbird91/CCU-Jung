@@ -873,3 +873,13 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
 .settings-panel .settings-item, .settings-panel .settings-select { background: color-mix(in srgb, var(--pop-bg) 88%, var(--text) 12%); border-color: var(--pop-line); }
 .settings-panel .settings-org, .settings-panel .settings-grid, .settings-panel .settings-maker { border-color: var(--pop-line); }
 .settings-item svg { color: var(--dept); }
+
+/* 휴대폰 목차(사이드바 서랍): 바탕과 구분되도록 */
+@media (max-width: 999px) {
+  .sidebar { background: var(--pop-bg); border-right: 1px solid var(--pop-line); }
+  .sidebar .side-head { background: var(--pop-bg); }
+  .sidebar .t4-link { background: color-mix(in srgb, var(--pop-bg) 88%, var(--text) 12%); border-color: var(--pop-line); }
+  .sidebar .side-extra { border-color: var(--pop-line); }
+  .scrim { background: rgba(5, 8, 14, .6); }
+  body.side-open .sidebar { box-shadow: 8px 0 32px rgba(0,0,0,.45); }
+}
