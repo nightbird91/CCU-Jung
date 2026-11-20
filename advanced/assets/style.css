@@ -841,3 +841,8 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
 .doc-lead-t { display: block; font-size: 13px; color: var(--text-3); margin-bottom: 4px; }
 .doc-lead ul { margin: 0; }
 .doc-lead li.hl { font-weight: 700; color: var(--text); background: color-mix(in srgb, var(--ccu-orange) 18%, transparent); border-radius: 4px; }
+/* 설정 맨 아래: 웹페이지 제작 */
+.settings-maker { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.settings-maker span { font-size: 12px; color: var(--text-3); font-weight: 600; }
+.settings-maker b { display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.settings-maker img { width: 20px; height: 20px; object-fit: contain; flex: none; }
