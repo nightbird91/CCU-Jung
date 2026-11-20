@@ -883,3 +883,25 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
   .scrim { background: rgba(5, 8, 14, .6); }
   body.side-open .sidebar { box-shadow: 8px 0 32px rgba(0,0,0,.45); }
 }
+
+/* ---------- 상단 버튼: 왼쪽 끝 목차, 오른쪽 끝 설정 (2026-11-21) ---------- */
+.hero-actions { display: contents; }
+.hero .settings-btn#settingsBtn, .hero .settings-btn#menuBtn {
+  position: absolute; top: 50%; bottom: auto; transform: translateY(-50%); margin: 0;
+}
+.hero #settingsBtn { right: 12px; left: auto; }
+.hero #menuBtn { left: 12px; right: auto; }
+@media (max-width: 999px) {
+  .hero #settingsBtn, .hero #menuBtn {
+    width: 40px; height: 40px; padding: 0; justify-content: center; border-radius: 50%;
+  }
+  .hero #settingsBtn span, .hero #menuBtn span { display: none; }
+  .hero #settingsBtn svg, .hero #menuBtn svg { width: 20px; height: 20px; }
+  .hero-text, .hero-text[class] { padding: 0 48px !important; text-align: center !important; }
+}
+@media (min-width: 600px) and (max-width: 999px) {
+  .hero #settingsBtn { right: 20px; }
+  .hero #menuBtn { left: 20px; }
+  .hero-text, .hero-text[class] { padding: 0 60px !important; }
+}
+@media (min-width: 1000px) { .hero #settingsBtn { right: 24px; } }

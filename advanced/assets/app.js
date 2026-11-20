@@ -311,6 +311,23 @@
 
   $menu.addEventListener('click', function () { document.body.classList.contains('side-open') ? closeSide() : openSide(); });
   $scrim.addEventListener('click', closeSide);
+  // 휴대폰: 왼쪽 가장자리에서 오른쪽으로 밀면 목차 열기, 열린 목차를 왼쪽으로 밀면 닫기
+  (function () {
+    var sx = 0, sy = 0, mode = '';
+    document.addEventListener('touchstart', function (e) {
+      if (window.innerWidth >= 1000 || e.touches.length !== 1) { mode = ''; return; }
+      var t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+      var open = document.body.classList.contains('side-open');
+      mode = open ? 'close' : (sx <= 32 && document.getElementById('docModal').hidden && $sPanel.hidden ? 'open' : '');
+    }, { passive: true });
+    document.addEventListener('touchend', function (e) {
+      if (!mode) return;
+      var t = e.changedTouches[0], dx = t.clientX - sx, dy = Math.abs(t.clientY - sy);
+      if (mode === 'open' && dx > 60 && dy < dx * 0.6) openSide();
+      if (mode === 'close' && dx < -60 && dy < -dx * 0.6) closeSide();
+      mode = '';
+    }, { passive: true });
+  })();
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSide(); });
 
   function renderTable() {
