@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>전공심화 운영진단 편람</title>
+  <title>학사학위 전공심화 운영진단 편람</title>
   <meta name="description" content="전문대학 학사학위 전공심화과정 3주기 운영진단 편람의 구분·분야·영역·진단지표를 모바일에서 열람하는 페이지">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#171d26" media="(prefers-color-scheme: dark)">
@@ -12,29 +12,43 @@
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
-  <header class="appbar">
-    <div class="appbar-inner">
-      <button class="icon-btn menu-btn" id="menuBtn" aria-label="목차 열기" aria-controls="sidebar" aria-expanded="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
-      </button>
-      <button class="icon-btn" id="backBtn" aria-label="뒤로" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
-      </button>
-      <h1 id="pageTitle">전공심화 운영진단 편람<small>3주기 (2027~2029)</small></h1>
-      <a class="icon-btn" href="#/search" aria-label="검색">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
-      </a>
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-text">
+        <h1 class="hero-title">학사학위 전공심화 운영진단 편람</h1>
+        <p class="hero-sub">3주기 (2027년 ~ 2029년)</p>
+      </div>
     </div>
   </header>
 
-  <aside class="sidebar" id="sidebar" aria-label="편람 목차"></aside>
-  <div class="scrim" id="scrim"></div>
+  <div class="layout">
+    <aside class="sidebar" id="sidebar" aria-label="편람 목차"></aside>
+    <div class="scrim" id="scrim"></div>
 
-  <main id="app" aria-live="polite">
-    <p class="empty">불러오는 중…</p>
-  </main>
+    <div class="content">
+      <div class="appbar">
+        <div class="appbar-inner">
+          <button class="icon-btn menu-btn" id="menuBtn" aria-label="목차 열기" aria-controls="sidebar" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+          <button class="icon-btn" id="backBtn" aria-label="뒤로" hidden>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <h2 id="pageTitle" class="page-title">전체 지표</h2>
+          <a class="icon-btn" href="#/search" aria-label="검색">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          </a>
+        </div>
+      </div>
 
-  <footer id="footer"></footer>
+      <main id="app" aria-live="polite">
+        <p class="empty">불러오는 중…</p>
+      </main>
+
+      <footer id="footer"></footer>
+    </div>
+  </div>
+
 
   <button class="top-btn" id="topBtn" aria-label="맨 위로">
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>

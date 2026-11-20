@@ -31,7 +31,7 @@
   function typeChip(t) { return '<span class="chip ' + esc(t) + '">' + esc(t) + '</span>'; }
   function setTitle(main, sub) {
     $title.innerHTML = esc(main) + (sub ? '<small>' + esc(sub) + '</small>' : '');
-    document.title = main === '전공심화 운영진단 편람' ? main : main + ' · 전공심화 운영진단 편람';
+    document.title = main === '전체 지표' ? '학사학위 전공심화 운영진단 편람' : main + ' · 학사학위 전공심화 운영진단 편람';
   }
   function setTab(name) {
     document.querySelectorAll('.tabbar a').forEach(function (a) {
@@ -67,7 +67,7 @@
 
   /* ---------- views ---------- */
   function viewHome() {
-    setTitle('전공심화 운영진단 편람', DATA.meta.cycle);
+    setTitle('전체 지표', '100점 · 15개 진단지표');
     setTab('home');
     var types = ['전체', '정량', '정성', '혼합'];
     var counts = { '전체': INDEX.length, '정량': 0, '정성': 0, '혼합': 0 };
