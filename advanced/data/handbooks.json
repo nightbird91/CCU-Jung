@@ -1,0 +1,12 @@
+[
+  {
+    "id": "2027",
+    "name": "2027년 운영진단 편람",
+    "evalYear": "2027년",
+    "baseYear": "2026학년도",
+    "cycle": "3주기 (2027년 ~ 2029년)",
+    "published": "2026. 05.",
+    "data": "data/manual.json",
+    "docs": "docs/2027/"
+  }
+]

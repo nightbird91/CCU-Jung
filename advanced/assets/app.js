@@ -30,8 +30,8 @@
   }
   function typeChip(t) { return '<span class="chip ' + esc(t) + '">' + esc(t) + '</span>'; }
   function setTitle(main, sub) {
-    $title.innerHTML = esc(main) + (sub ? '<small>' + esc(sub) + '</small>' : '');
-    document.title = main === '전체 지표' ? '학사학위 전공심화 운영진단 편람' : main + ' · 학사학위 전공심화 운영진단 편람';
+    if ($title) $title.innerHTML = esc(main) + (sub ? '<small>' + esc(sub) + '</small>' : '');
+    document.title = main === '전체 지표' ? '전문대학 학사학위 전공심화 운영진단 편람' : main + ' · 전문대학 학사학위 전공심화 운영진단 편람';
   }
   function setTab(name) {
     document.querySelectorAll('.tabbar a').forEach(function (a) {
@@ -42,6 +42,7 @@
 
   /* ---------- data ---------- */
   function buildIndex() {
+    INDEX = []; BY_ID = {}; DOCS = null;
     DATA.categories.forEach(function (c) {
       c.fields.forEach(function (f) {
         f.areas.forEach(function (a) {
@@ -75,7 +76,7 @@
 
     var h = '';
     h += '<section class="card summary">' +
-      '<div class="muted">' + esc(DATA.meta.edition) + ' · ' + esc(DATA.meta.published) + '</div>' +
+      '<div class="muted">' + esc(HB.name) + ' 기준 · 진단기준년도 ' + esc(HB.baseYear) + ' · ' + esc(HB.published) + ' 발간</div>' +
       '<div class="total"><b>100점</b><span class="muted">총 ' + INDEX.length + '개 진단지표</span></div>' +
       '<div class="bar" role="img" aria-label="대학 15점, 학과 85점"><span class="c" style="width:15%"></span><span class="d" style="width:85%"></span></div>' +
       '<div class="legend"><span><i style="background:var(--college)"></i>대학 15점 · 3개 지표</span><span><i style="background:var(--dept)"></i>학과 85점 · 12개 지표</span><span><i style="background:var(--minus)"></i>감점 최대 −2점</span></div>' +
@@ -193,34 +194,71 @@
     $app.innerHTML = h;
   }
 
+  /* ---------- 본문 상단: 선택한 분야의 진단지표 전체 ---------- */
+  function renderIndPicker(c, f, activeId) {
+    var h = '<section class="card picker c' + c.id + '" aria-label="진단지표 선택"><div class="picker-head"><div><span class="muted">' + esc(c.name) + ' · 분야 ' + esc(f.id) + '</span><b>' + esc(f.name) + '</b></div><span class="picker-meta">' + countInds(f) + '개 지표 · ' + f.score + '점</span></div>';
+    f.areas.forEach(function (a) {
+      h += '<div class="picker-area"><div class="picker-area-name">' + esc(a.id + ' ' + a.name) + ' <span>' + a.score + '점</span></div><div class="picker-grid">';
+      a.indicators.forEach(function (ind) {
+        var on = ind.id === activeId;
+        h += '<a class="pick' + (on ? ' on' : '') + '" href="#/i/' + ind.id + '"' + (on ? ' aria-current="true"' : '') + '><span class="pick-id">' + esc(ind.id) + '</span><span class="pick-name">' + esc(ind.name) + '</span><span class="pick-meta">' + typeChip(ind.type) + '<b>' + ind.score + '점</b></span></a>';
+      });
+      h += '</div></div>';
+    });
+    return h + '</section>';
+  }
+
   /* ---------- 사이드바 ---------- */
   var $side = document.getElementById('sidebar');
   var $scrim = document.getElementById('scrim');
   var $menu = document.getElementById('menuBtn');
   function renderSidebar() {
-    var h = '<div class="side-head"><b>편람 목차</b><span class="muted">' + esc(DATA.meta.cycle) + '</span></div><nav class="side-nav" aria-label="구분·분야">';
+    var h = '<div class="side-head"><b>편람 목차</b><div class="side-tools"><button type="button" class="side-tool side-tool-ic" data-all="open" aria-label="모두 펼치기" title="모두 펼치기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg></button><button type="button" class="side-tool side-tool-ic" data-all="close" aria-label="모두 접기" title="모두 접기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20l5-5 5 5M7 4l5 5 5-5"/></svg></button></div></div><nav class="side-nav" aria-label="구분·분야">';
     h += '<a class="side-link side-all" href="#/" data-key="home">전체 지표 <span>100점</span></a>';
+    h += '<ul class="tree">';
     DATA.categories.forEach(function (c) {
-      h += '<div class="side-cat c' + c.id + '"><a class="side-cat-link" href="#/c/' + c.id + '" data-key="c' + c.id + '"><i>' + esc(c.id) + '</i>' + esc(c.name) + '<span>' + c.score + '점</span></a><ul>';
+      h += '<li class="t1 c' + c.id + '" data-node="' + c.id + '">' + '<button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button>' + '<a class="t1-link" href="#/c/' + c.id + '" data-key="c' + c.id + '"><i>' + esc(c.id) + '</i><span class="tn">' + esc(c.name) + '</span><span class="tp">' + c.score + '점</span></a><ul>';
       c.fields.forEach(function (f) {
-        h += '<li><a class="side-link side-field" href="#/f/' + f.id + '" data-key="f' + f.id + '"><em>' + esc(f.id) + '</em>' + esc(f.name) + '<span>' + f.score + '점</span></a><ul class="side-inds" data-field="' + f.id + '">';
-        f.areas.forEach(function (a) {
-          h += '<li class="side-area">' + esc(a.id + ' ' + a.name) + '</li>';
-          a.indicators.forEach(function (ind) {
-            h += '<li><a class="side-ind" href="#/i/' + ind.id + '" data-key="i' + ind.id + '">' + esc(ind.id + ' ' + ind.name) + '</a></li>';
+        h += '<li class="t2" data-node="' + f.id + '">' + '<button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button>' + '<a class="t2-link" href="#/f/' + f.id + '" data-key="f' + f.id + '"><em>' + esc(f.id) + '</em><span class="tn">' + esc(f.name) + '</span><span class="tp">' + f.score + '점</span></a><ul>';
+        f.areas.forEach(function (ar) {
+          h += '<li class="t3" data-node="' + ar.id + '">' + '<button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button>' + '<div class="t3-label" data-key="a' + ar.id + '"><em>' + esc(ar.id) + '</em><span class="tn">' + esc(ar.name) + '</span><span class="tp">' + ar.score + '점</span></div><ul>';
+          ar.indicators.forEach(function (ind) {
+            h += '<li class="t4"><a class="t4-link" href="#/i/' + ind.id + '" data-key="i' + ind.id + '"><em>' + esc(ind.id) + '</em><span class="tn">' + esc(ind.name) + '</span><span class="tp">' + ind.score + '</span></a></li>';
           });
+          h += '</ul></li>';
         });
         h += '</ul></li>';
       });
-      h += '</ul></div>';
+      h += '</ul></li>';
     });
-    h += '</nav><div class="side-extra"><a class="side-link" href="#/plan" data-key="plan">기본계획 · 등급 기준</a><a class="side-link" href="#/changes" data-key="changes">3주기 변경사항</a><a class="side-link" href="#/search" data-key="search">검색</a></div>';
-    $side.innerHTML = h;
-    $side.addEventListener('click', function (e) { if (e.target.closest('a')) closeSide(); });
+    h += '</ul>';
+    h += '</nav><div class="side-extra"><a class="side-link" href="#/search" data-key="search"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><b>검색</b></a><a class="side-link" href="#/plan" data-key="plan"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><b>기본계획 · 등급 기준</b></a><a class="side-link" href="#/changes" data-key="changes"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg><b>3주기 변경사항</b></a></div>';
+    $side.innerHTML = '<div class="sidebar-inner">' + h + '</div>';
+    var collapsed = {};
+    try { collapsed = JSON.parse(localStorage.getItem('jsh-toc') || '{}') || {}; } catch (e) {}
+    function save() { try { localStorage.setItem('jsh-toc', JSON.stringify(collapsed)); } catch (e) {} }
+    function setNode(li, open) {
+      li.classList.toggle('collapsed', !open);
+      li.querySelector(':scope > .tg').setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) delete collapsed[li.getAttribute('data-node')]; else collapsed[li.getAttribute('data-node')] = 1;
+    }
+    $side.querySelectorAll('[data-node]').forEach(function (li) { setNode(li, !collapsed[li.getAttribute('data-node')]); });
+    expandTo = function (ids) {
+      ids.forEach(function (id) { var li = $side.querySelector('[data-node="' + id + '"]'); if (li && li.classList.contains('collapsed')) setNode(li, true); });
+      save();
+    };
+    $side.addEventListener('click', function (e) {
+      var tg = e.target.closest('.tg, .t3-label');
+      if (tg) { var li = tg.closest('[data-node]'); setNode(li, li.classList.contains('collapsed')); save(); return; }
+      var all = e.target.closest('[data-all]');
+      if (all) { var open = all.getAttribute('data-all') === 'open'; $side.querySelectorAll('[data-node]').forEach(function (li) { setNode(li, open); }); save(); return; }
+      if (e.target.closest('a')) closeSide();
+    });
   }
+  var expandTo = function () {};
   function markSidebar(path) {
     var keys = [], field = null;
-    if (path.indexOf('/i/') === 0) { var ind = BY_ID[path.slice(3)]; if (ind) { field = ind._field.id; keys = ['i' + ind.id, 'f' + field, 'c' + ind._cat.id]; } }
+    if (path.indexOf('/i/') === 0) { var ind = BY_ID[path.slice(3)]; if (ind) { field = ind._field.id; keys = ['i' + ind.id, 'a' + ind._area.id, 'f' + field, 'c' + ind._cat.id]; expandTo([ind._cat.id, field, ind._area.id]); } }
     else if (path.indexOf('/f/') === 0) { field = path.slice(3); var r = findField(field); keys = ['f' + field].concat(r ? ['c' + r.c.id] : []); }
     else if (path.indexOf('/c/') === 0) keys = ['c' + path.slice(3)];
     else if (path === '/plan' || path === '/changes' || path === '/search') keys = [path.slice(1)];
@@ -230,10 +268,38 @@
       a.classList.toggle('on', on);
       if (on && keys[0] === a.getAttribute('data-key')) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    $side.querySelectorAll('.side-inds').forEach(function (u) { u.hidden = u.getAttribute('data-field') !== field; });
   }
   function openSide() { document.body.classList.add('side-open'); $menu.setAttribute('aria-expanded', 'true'); }
   function closeSide() { document.body.classList.remove('side-open'); $menu.setAttribute('aria-expanded', 'false'); }
+  var $sBtn = document.getElementById('settingsBtn');
+  var $sPanel = document.getElementById('settingsPanel');
+  function setSettings(open) { $sPanel.hidden = !open; $sBtn.setAttribute('aria-expanded', open ? 'true' : 'false'); }
+  $sBtn.addEventListener('click', function (e) { e.stopPropagation(); setSettings($sPanel.hidden); });
+  document.addEventListener('click', function (e) { if (!$sPanel.hidden && !$sPanel.contains(e.target)) setSettings(false); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setSettings(false); });
+  /* ---------- 편람 PDF 보기 팝업 (총괄표, 작성자료·지침) ---------- */
+  var $doc = document.getElementById('docModal');
+  var docLast = null;
+  function closeDoc() { if ($doc.hidden) return; $doc.hidden = true; document.body.classList.remove('modal-open'); if (docLast) docLast.focus(); }
+  function openDoc(title, sub, imgs, pdf, lead) {
+    docLast = document.activeElement; setSettings(false);
+    document.getElementById('docTitle').innerHTML = esc(title) + (sub ? ' <small>' + esc(sub) + '</small>' : '');
+    document.getElementById('docPdf').href = pdf;
+    document.getElementById('docBody').innerHTML = (lead ? '<div class="doc-lead">' + lead + '</div>' : '') + imgs.map(function (m) {
+      return '<figure class="doc-page"><img src="' + esc(m.src) + '" alt="' + esc(m.alt) + '" loading="lazy">' + (m.cap ? '<figcaption>' + esc(m.cap) + '</figcaption>' : '') + '</figure>';
+    }).join('');
+    document.getElementById('docBody').scrollTop = 0;
+    $doc.hidden = false; document.body.classList.add('modal-open');
+    $doc.querySelector('.modal-close').focus();
+  }
+  $doc.addEventListener('click', function (e) { if (e.target === $doc || e.target.closest('.modal-close')) closeDoc(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDoc(); });
+  window.addEventListener('hashchange', closeDoc);
+  document.getElementById('summaryOpen').addEventListener('click', function (e) {
+    e.stopPropagation();
+    openDoc('진단지표 총괄표', HB.name + ' · 편람 10쪽', [{ src: HB.docs + 'summary.png', alt: '편람 10쪽 진단지표 총괄표: 구분·분야·영역·진단지표별 배점(총 100점)' }], HB.docs + 'summary.pdf');
+  });
+
   $menu.addEventListener('click', function () { document.body.classList.contains('side-open') ? closeSide() : openSide(); });
   $scrim.addEventListener('click', closeSide);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSide(); });
@@ -261,7 +327,7 @@
 
     var secs = [];
     var h = '';
-    h += '<div class="crumbs"><span><a href="#/c/' + ind._cat.id + '">' + esc(ind._cat.id + '. ' + ind._cat.name) + '</a></span><span><a href="#/f/' + ind._field.id + '">' + esc(ind._field.id + ' ' + ind._field.name) + '</a></span><span>' + esc(ind._area.id + ' ' + ind._area.name) + '</span></div>';
+    h += '<div class="crumbs" id="detailTop"><span>' + esc(ind._cat.id + '. ' + ind._cat.name) + '</span><span>' + esc(ind._field.id + ' ' + ind._field.name) + '</span><span>' + esc(ind._area.id + ' ' + ind._area.name) + '</span></div>';
     h += '<section class="card detail-head"><div class="iid">진단지표 ' + esc(ind.id) + '</div><h2>' + esc(ind.name) + '</h2><div class="chips">' + typeChip(ind.type) + '<span class="chip score">' + ind.score + '점</span>' + (ind.pages ? '<span class="chip">편람 ' + esc(ind.pages) + '쪽</span>' : '') + '</div>';
     if (ind.sub) {
       h += '<div class="subs">' + ind.sub.map(function (s) {
@@ -272,65 +338,76 @@
 
     // sections
     var body = '';
-    function sec(key, title, html) { secs.push([key, title]); body += '<section class="card sec" id="s-' + key + '"><h3>' + esc(title) + '</h3>' + html + '</section>'; }
+    function sec(key, title, html, tool) { secs.push([key, title]); body += '<section class="card sec" id="s-' + key + '"><h3>' + esc(title) + (tool || '') + '</h3>' + html + '</section>'; }
 
     var ov = '';
     if (ind.notes) ov += ind.notes.map(function (n) { return '<div class="callout warn" style="margin:0 0 12px">' + esc(n) + '</div>'; }).join('');
     ov += '<h4 style="margin-top:0">진단 방향</h4><ul class="dots">' + ind.direction.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>';
-    if (ind.definitions) ov += '<h4>용어의 정의</h4><ul class="dots">' + ind.definitions.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>';
-    sec('ov', '개요', ov);
+    var defBtn = (ind.definitions && ind.definitions.length) ? '<button type="button" class="sec-tool" data-defs aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>용어의 정의</button>' : '';
+    sec('ov', '개요', ov, defBtn);
 
     var el = '<ul class="el-list">';
     ind.elements.forEach(function (e) {
       if (e.group) { el += '<li class="el-group">' + esc(e.group) + '</li>'; return; }
-      el += '<li class="el-item"><span class="t">' + esc(e.text) + '</span>' + (e.ev ? '<span class="ev">증빙 ' + esc(e.ev) + '</span>' : '') + '</li>';
+      el += '<li class="el-item"><span class="t">' + esc(e.text) + '</span>' + (e.ev ? (ind.evidence ? '<button type="button" class="ev ev-btn" data-ev="' + esc(e.ev) + '" aria-haspopup="dialog" title="증빙자료 보기">' : '<span class="ev">') + '증빙 ' + esc(e.ev) + (ind.evidence ? '</button>' : '</span>') : '') + '</li>';
     });
     el += '</ul>';
-    if (ind.evidence) {
-      el += '<h4>증빙자료</h4><ul class="plain">' + ind.evidence.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>';
-      el += '<div class="callout">※ 증빙자료 미제출 시 해당 진단요소 실적 미인정</div>';
-    }
-    sec('el', '진단요소', el);
+    var evBtn = (ind.evidence && ind.evidence.length) ? '<button type="button" class="sec-tool" data-ev="" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M9 14l2 2 4-4"/></svg>증빙자료</button>' : '';
+    sec('el', '진단요소', el, evBtn);
 
     if (ind.forms && ind.forms.length) {
-      var fm = '<p class="muted" style="margin-top:-4px">항목을 누르면 작성 지침이 펼쳐집니다.</p>';
-      ind.forms.forEach(function (f) {
+      var fm = '<p class="muted" style="margin-top:-4px">항목을 누르면 편람의 해당 양식·작성 지침 쪽(PDF)이 팝업으로 열립니다.</p>';
+      ind.forms.forEach(function (f, fi) {
         var kind = f.label.indexOf('표') === 0 ? '표' : '기술';
-        fm += '<details class="form"><summary><span class="lbl ' + kind + '">' + esc(f.label) + '</span><span class="ttl">' + esc(f.title) + '</span>' + caret() + '</summary><div class="form-body">';
-        if (f.columns) fm += '<div class="muted">작성 항목</div><div class="cols">' + f.columns.map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') + '</div>';
-        if (f.guide && f.guide.length) fm += '<div class="muted">작성 지침</div><ul class="dots">' + f.guide.map(function (g) { return '<li>' + esc(g) + '</li>'; }).join('') + '</ul>';
-        fm += '</div></details>';
+        fm += '<button type="button" class="form form-btn" data-form="' + fi + '" aria-haspopup="dialog"><span class="lbl ' + kind + '">' + esc(f.label) + '</span><span class="ttl">' + esc(f.title) +
+          (f.pdfPages ? '<small>편람 ' + f.pdfPages.map(function (n) { return n - 1; }).join('·') + '쪽 · PDF 보기</small>' : '') + '</span>' +
+          '<svg class="pdf-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></button>';
       });
       sec('fm', '작성자료·지침', fm);
     }
 
-    var sc = '';
+    var sc = '', pops = [];
     if (ind.formulas) {
-      sc += '<div class="scale-title">산출 방법</div>' + ind.formulas.map(function (f) { return '<div class="formula">' + esc(f) + '</div>'; }).join('');
+      pops.push({ kind: '산식', title: '산출 방법', html: ind.formulas.map(function (f) { return '<div class="formula">' + esc(f) + '</div>'; }).join('') });
     }
     ind.scales.forEach(function (s) {
+      var t, hh = '';
       if (s.kind === 'qual') {
-        sc += '<div class="scale-title">' + esc(s.title || ('진단 척도 (정성, ' + s.points[0] + '점)')) + '</div>';
-        sc += '<div class="table-wrap"><table class="qual-scale"><thead><tr><th>진단</th><th>진단 기준</th><th class="num">배점</th></tr></thead><tbody>' +
+        t = s.title || ('진단 척도 (정성, ' + s.points[0] + '점)');
+        hh += '<div class="table-wrap"><table class="qual-scale"><thead><tr><th>진단</th><th>진단 기준</th><th class="num">배점</th></tr></thead><tbody>' +
           qualRows(s.n, s.points).map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td>' + esc(r[1]) + '</td><td>' + r[2] + '</td></tr>'; }).join('') + '</tbody></table></div>';
       } else {
-        sc += '<div class="scale-title">' + esc(s.title) + '</div>';
+        t = s.title;
         if (s.rows.length === 1) {
           // 한 줄짜리 척도표는 휴대폰에서 읽기 쉽게 세로(기준 | 배점)로 바꿔서 표시
-          sc += '<div class="table-wrap"><table class="vert-scale"><thead><tr><th>' + esc(s.headers[0]) + '</th><th class="num">' + esc(s.rows[0][0]) + '</th></tr></thead><tbody>' +
+          hh += '<div class="table-wrap"><table class="vert-scale"><thead><tr><th>' + esc(s.headers[0]) + '</th><th class="num">' + esc(s.rows[0][0]) + '</th></tr></thead><tbody>' +
             s.headers.slice(1).map(function (hd, i) { return '<tr><td>' + esc(hd) + '</td><td class="num"><b>' + esc(s.rows[0][i + 1]) + '</b></td></tr>'; }).join('') + '</tbody></table></div>';
         } else {
-          sc += '<div class="table-wrap"><table><thead><tr>' + s.headers.map(function (x, i) { return '<th' + (i ? ' class="num"' : '') + '>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+          hh += '<div class="table-wrap"><table><thead><tr>' + s.headers.map(function (x, i) { return '<th' + (i ? ' class="num"' : '') + '>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
             s.rows.map(function (r) { return '<tr>' + r.map(function (x, i) { return '<td' + (i ? ' class="num"' : '') + '>' + esc(x) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
         }
-        if (s.note) sc += '<div class="callout">※ ' + esc(s.note) + '</div>';
+        if (s.note) hh += '<div class="callout">※ ' + esc(s.note) + '</div>';
       }
+      pops.push({ kind: '척도', title: t, html: hh });
     });
+    if (pops.length) {
+      sc += '<p class="muted" style="margin-top:-4px">항목을 누르면 산식·척도표가 팝업으로 열립니다.</p>';
+      sc += pops.map(function (pp, pi) {
+        return '<button type="button" class="form form-btn" data-pop="' + pi + '" aria-haspopup="dialog"><span class="lbl ' + pp.kind + '">' + pp.kind + '</span><span class="ttl">' + esc(pp.title) + '</span>' +
+          '<svg class="pdf-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' +
+          (pp.kind === '산식' ? '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M9 12h6M12 9v6M9 17h6"/>' : '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/>') +
+          '</svg></button>';
+      }).join('');
+    }
     if (ind.calc && CALCS[ind.calc]) sc += CALCS[ind.calc].html();
     sec('sc', '진단척도', sc);
 
     if (ind.changes) {
-      sec('ch', '3주기 변경', '<ul class="dots change-list">' + ind.changes.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>');
+      sec('ch', '3주기 변경', '<p class="muted" style="margin-top:-4px">항목을 누르면 변경사항 원문(개정 전·후 비교)이 팝업으로 열립니다.</p>' +
+        ind.changes.map(function (c, ci) {
+          return '<button type="button" class="form form-btn ch-btn" data-ch="' + ci + '" aria-haspopup="dialog"><span class="lbl 변경">변경</span><span class="ttl">' + esc(c) + '</span>' +
+            '<svg class="pdf-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg></button>';
+        }).join(''));
     }
 
     h += '<nav class="toc" aria-label="지표 내 이동">' + secs.map(function (s) { return '<a href="#s-' + s[0] + '" data-sec="' + s[0] + '">' + esc(s[1]) + '</a>'; }).join('') + '</nav>';
@@ -350,14 +427,84 @@
     $app.querySelectorAll('.toc a').forEach(function (a) {
       a.addEventListener('click', function (e) {
         e.preventDefault();
+        setTocOn(a);
+        spyLock = Date.now() + 1200;
         var t = document.getElementById('s-' + a.getAttribute('data-sec'));
-        if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 112, behavior: 'smooth' });
+        if (t) window.scrollTo({ top: t.getBoundingClientRect().top + window.scrollY - 60, behavior: 'smooth' });
       });
+    });
+    $app.querySelectorAll('[data-ev]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var want = (b.getAttribute('data-ev').match(/[①-⑳]/g) || []);
+        var list = ind.evidence.filter(function (d) { return !want.length || want.indexOf(d.trim().charAt(0)) >= 0; });
+        if (!list.length) list = ind.evidence;
+        openInfo('증빙자료' + (want.length ? ' ' + want.join(', ') : ''), ind.id + ' ' + ind.name,
+          '<ul class="plain">' + list.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>' +
+          '<div class="callout" style="margin-top:12px">※ 증빙자료 미제출 시 해당 진단요소 실적 미인정</div>');
+      });
+    });
+    $app.querySelectorAll('[data-ch]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var ci = +b.getAttribute('data-ch');
+        var lead = '<b class="doc-lead-t">3주기 변경 요약</b><ul class="dots">' + ind.changes.map(function (c, i) { return '<li' + (i === ci ? ' class="hl"' : '') + '>' + esc(c) + '</li>'; }).join('') + '</ul>';
+        var pg = ind.changePages || [];
+        if (!pg.length) lead += '<p class="muted" style="margin:8px 0 0">변경사항 원문에는 이 지표의 개별 비교표가 없고, 공통 변경 사항만 해당됩니다. 위 "PDF로 열기"에서 변경사항 전체를 볼 수 있습니다.</p>';
+        openDoc('3주기 변경 사항', ind.id + ' ' + ind.name, pg.map(function (n) {
+          var pad = ('00' + n).slice(-3);
+          return { src: HB.docs + 'changes/p' + pad + '.png', alt: '변경사항 원문 ' + n + '쪽', cap: '변경사항 원문 ' + n + '쪽' };
+        }), HB.docs + 'changes/' + (pg.length ? ind.id : 'all') + '.pdf', lead);
+      });
+    });
+    $app.querySelectorAll('[data-pop]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var pp = pops[+b.getAttribute('data-pop')];
+        openInfo(pp.title, ind.id + ' ' + ind.name, pp.html, true);
+      });
+    });
+    $app.querySelectorAll('[data-form]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var f = ind.forms[+b.getAttribute('data-form')];
+        if (!f.pdfPages) return;
+        openDoc(f.label, f.title, f.pdfPages.map(function (n) {
+          var pad = ('00' + n).slice(-3);
+          return { src: HB.docs + 'pages/p' + pad + '.png', alt: '편람 ' + (n - 1) + '쪽', cap: '편람 ' + (n - 1) + '쪽' };
+        }), HB.docs + f.file);
+      });
+    });
+    var $defs = $app.querySelector('[data-defs]');
+    if ($defs) $defs.addEventListener('click', function () {
+      openInfo('용어의 정의', ind.id + ' ' + ind.name, '<ul class="dots">' + ind.definitions.map(function (d) { return '<li>' + esc(d) + '</li>'; }).join('') + '</ul>');
     });
     setupScrollSpy();
   }
 
-  var spy = null;
+  /* ---------- 공용 팝업 (용어의 정의 등) ---------- */
+  var $info = null, infoLast = null;
+  function closeInfo() { if (!$info || $info.hidden) return; $info.hidden = true; document.body.classList.remove('modal-open'); if (infoLast) infoLast.focus(); }
+  function openInfo(title, sub, html, wide) {
+    if (!$info) {
+      $info = document.createElement('div');
+      $info.className = 'modal'; $info.id = 'infoModal'; $info.hidden = true;
+      $info.setAttribute('role', 'dialog'); $info.setAttribute('aria-modal', 'true'); $info.setAttribute('aria-labelledby', 'infoTitle');
+      $info.innerHTML = '<div class="modal-box modal-sm"><div class="modal-head"><b id="infoTitle"></b><button type="button" class="modal-close" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="modal-text"></div></div>';
+      document.body.appendChild($info);
+      $info.addEventListener('click', function (e) { if (e.target === $info || e.target.closest('.modal-close')) closeInfo(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeInfo(); });
+      window.addEventListener('hashchange', closeInfo);
+    }
+    infoLast = document.activeElement;
+    $info.querySelector('#infoTitle').innerHTML = esc(title) + (sub ? ' <small>' + esc(sub) + '</small>' : '');
+    $info.querySelector('.modal-text').innerHTML = html;
+    $info.querySelector('.modal-box').classList.toggle('modal-wide', !!wide);
+    $info.hidden = false; document.body.classList.add('modal-open');
+    $info.querySelector('.modal-close').focus();
+  }
+
+  var spy = null, spyLock = 0;
+  function setTocOn(a) {
+    $app.querySelectorAll('.toc a').forEach(function (x) { x.classList.toggle('on', x === a); x.removeAttribute('aria-current'); });
+    if (a) { a.setAttribute('aria-current', 'true'); a.parentNode.scrollTo({ left: a.offsetLeft - 16, behavior: 'smooth' }); }
+  }
   function setupScrollSpy() {
     if (spy) spy.disconnect();
     if (!('IntersectionObserver' in window)) return;
@@ -365,13 +512,9 @@
     $app.querySelectorAll('.toc a').forEach(function (a) { links['s-' + a.getAttribute('data-sec')] = a; });
     spy = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
-        if (en.isIntersecting) {
-          Object.keys(links).forEach(function (k) { links[k].classList.toggle('on', k === en.target.id); });
-          var on = links[en.target.id];
-          if (on && on.scrollIntoView) on.parentNode.scrollTo({ left: on.offsetLeft - 16, behavior: 'smooth' });
-        }
+        if (en.isIntersecting && Date.now() > spyLock && links[en.target.id]) setTocOn(links[en.target.id]);
       });
-    }, { rootMargin: '-120px 0px -60% 0px' });
+    }, { rootMargin: '-70px 0px -60% 0px' });
     $app.querySelectorAll('section.sec').forEach(function (s) { spy.observe(s); });
   }
 
@@ -382,8 +525,8 @@
     return parseFloat(String(el.value).replace(/,/g, ''));
   }
   function calcBox(title, fields, note) {
-    return '<div class="calc" data-calc><h4>' + esc(title) + '</h4><div class="muted">값을 입력하면 편람 산식에 따라 점수를 계산합니다. (참고용 · 소수점 처리는 편람 기준 확인)</div><div class="grid">' +
-      fields + '</div><div class="out" data-out><span class="muted">값을 입력하세요.</span></div>' + (note ? '<div class="muted" style="margin-top:8px">' + esc(note) + '</div>' : '') + '</div>';
+    return '<details class="calc" data-calc><summary><svg class="calc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 18h.01M12 18h.01M16 18h.01"/></svg><h4>' + esc(title) + '</h4><span class="calc-hint">계산해 보기</span>' + caret() + '</summary><div class="calc-body"><div class="muted">값을 입력하면 편람 산식에 따라 점수를 계산합니다. (참고용 · 소수점 처리는 편람 기준 확인)</div><div class="grid">' +
+      fields + '</div><div class="out" data-out><span class="muted">값을 입력하세요.</span></div>' + (note ? '<div class="muted" style="margin-top:8px">' + esc(note) + '</div>' : '') + '</div></details>';
   }
   function inp(name, label, full, ph) {
     return '<label' + (full ? ' class="full"' : '') + '>' + esc(label) + '<input type="number" inputmode="decimal" name="' + name + '" placeholder="' + esc(ph || '') + '"></label>';
@@ -674,11 +817,15 @@
     qs.split('&').forEach(function (kv) { if (!kv) return; var p = kv.split('='); params[p[0]] = decodeURIComponent(p[1] || ''); });
 
     var isDetail = path.indexOf('/i/') === 0 || path.indexOf('/f/') === 0 || path.indexOf('/c/') === 0;
-    $back.hidden = !isDetail;
+    if ($back) $back.hidden = !isDetail;
     if (spy) { spy.disconnect(); spy = null; }
 
     if (path.indexOf('/i/') === 0) viewIndicator(path.slice(3));
-    else if (path.indexOf('/f/') === 0) viewField(path.slice(3));
+    else if (path.indexOf('/f/') === 0) {
+      var fr = findField(path.slice(3));
+      if (fr) { location.replace('#/i/' + fr.f.areas[0].indicators[0].id); return; }
+      viewHome();
+    }
     else if (path.indexOf('/c/') === 0) viewCategory(path.slice(3));
     else if (path === '/search') viewSearch(params.q);
     else if (path === '/plan') viewPlan();
@@ -686,11 +833,15 @@
     else viewHome();
 
     markSidebar(path);
-    if (path !== lastRoute) window.scrollTo(0, 0);
+    var sameField = path.indexOf('/i/') === 0 && lastRoute.indexOf('/i/') === 0 && BY_ID[path.slice(3)] && BY_ID[lastRoute.slice(3)] && BY_ID[path.slice(3)]._field === BY_ID[lastRoute.slice(3)]._field;
+    if (sameField) {
+      var t = document.getElementById('detailTop');
+      if (t && t.getBoundingClientRect().top < 0) window.scrollTo(0, t.getBoundingClientRect().top + window.scrollY - 10);
+    } else if (path !== lastRoute) window.scrollTo(0, 0);
     lastRoute = path;
   }
 
-  $back.addEventListener('click', function () {
+  if ($back) $back.addEventListener('click', function () {
     var navigated = false;
     try { navigated = !!sessionStorage.getItem('jsh-nav'); } catch (e) {}
     if (navigated) history.back();
@@ -700,16 +851,45 @@
   window.addEventListener('scroll', function () { $top.classList.toggle('show', window.scrollY > 600); }, { passive: true });
   $top.addEventListener('click', function () { window.scrollTo({ top: 0, behavior: 'smooth' }); });
 
-  fetch('data/manual.json', { cache: 'no-cache' })
-    .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(function (d) {
+  /* ---------- 편람 목록 / 선택 ---------- */
+  var HBS = [], HB = null;
+  function loadJSON(path) {
+    var inl = document.querySelector('script[type="application/json"][data-src="' + path + '"]');
+    if (inl) return Promise.resolve(JSON.parse(inl.textContent));
+    return fetch(path, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+  }
+  function renderHbInfo() {
+    var $sel = document.getElementById('hbSelect');
+    $sel.innerHTML = HBS.map(function (h) { return '<option value="' + esc(h.id) + '"' + (h === HB ? ' selected' : '') + '>' + esc(h.name) + '</option>'; }).join('');
+    document.getElementById('hbInfo').innerHTML =
+      '<div class="settings-row"><span>진단기준년도</span><b>' + esc(HB.baseYear) + '</b></div>' +
+      '<div class="settings-row"><span>운영진단 실시</span><b>' + esc(HB.evalYear) + '</b></div>' +
+      '<div class="settings-row"><span>진단 주기</span><b>' + esc(HB.cycle) + '</b></div>' +
+      '<div class="settings-row"><span>발간</span><b>' + esc(HB.published) + '</b></div>';
+  }
+  function useHandbook(h) {
+    HB = h;
+    try { localStorage.setItem('jsh-hb', h.id); } catch (e) {}
+    renderHbInfo();
+    return loadJSON(h.data).then(function (d) {
       DATA = d;
       buildIndex();
       renderSidebar();
-      document.getElementById('footer').innerHTML = '출처 : ' + esc(d.meta.title) + ' ' + esc(d.meta.cycle) + ' (' + esc(d.meta.published) + '). 본 페이지는 열람 편의를 위한 정리본이며, 정확한 내용은 편람 원문을 확인하세요.';
+      document.getElementById('footer').innerHTML = '출처 : ' + esc(d.meta.title) + ' ' + esc(d.meta.cycle) + ' (' + esc(HB.name) + ', 진단기준년도 ' + esc(HB.baseYear) + ', ' + esc(d.meta.published) + '). 본 페이지는 열람 편의를 위한 정리본이며, 정확한 내용은 편람 원문을 확인하세요.';
       route();
-    })
-    .catch(function (e) {
-      $app.innerHTML = '<p class="empty">데이터를 불러오지 못했습니다 (' + esc(e.message) + ').<br>로컬 파일로 열었다면 웹 서버(GitHub Pages 등)를 통해 열어 주세요.</p>';
     });
+  }
+  document.getElementById('hbSelect').addEventListener('change', function (e) {
+    var h = HBS.filter(function (x) { return x.id === e.target.value; })[0];
+    if (h && h !== HB) useHandbook(h).catch(fail);
+  });
+  function fail(e) {
+    $app.innerHTML = '<p class="empty">데이터를 불러오지 못했습니다 (' + esc(e.message) + ').<br>로컬 파일로 열었다면 웹 서버(GitHub Pages 등)를 통해 열어 주세요.</p>';
+  }
+  loadJSON('data/handbooks.json').then(function (list) {
+    HBS = list;
+    var saved = null; try { saved = localStorage.getItem('jsh-hb'); } catch (e) {}
+    var h = list.filter(function (x) { return x.id === saved; })[0] || list[0];
+    return useHandbook(h);
+  }).catch(fail);
 })();
