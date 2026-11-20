@@ -139,7 +139,7 @@
         '<span class="iname">' + esc(ind.name) + '</span>' +
         (ind.sub ? '<span class="ind-sub">' + ind.sub.map(function (s) { return esc(s.no + ' ' + s.name + ' (' + s.score + ')'); }).join('<br>') + '</span>' : '') +
         '<span class="ichips">' + typeChip(ind.type) + '</span>' +
-        '<span class="ipts">' + ind.score + '<small>점</small></span>' +
+        '<span class="ipts" style="--h:' + Math.round(INDEX.indexOf(ind) * 360 / INDEX.length) + '">' + ind.score + '<small>점</small></span>' +
         '</a></li>';
     });
     return fb + '</ul></details>';
