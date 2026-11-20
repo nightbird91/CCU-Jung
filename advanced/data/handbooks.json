@@ -7,6 +7,7 @@
     "cycle": "3주기 (2027년 ~ 2029년)",
     "published": "2026. 05.",
     "data": "data/manual.json",
-    "docs": "docs/2027/"
+    "docs": "docs/2027/",
+    "changesPages": 17
   }
 ]

@@ -295,6 +295,15 @@
   $doc.addEventListener('click', function (e) { if (e.target === $doc || e.target.closest('.modal-close')) closeDoc(); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDoc(); });
   window.addEventListener('hashchange', closeDoc);
+  document.getElementById('changesOpen').addEventListener('click', function (e) {
+    e.stopPropagation();
+    var imgs = [];
+    for (var n = 1; n <= (HB.changesPages || 0); n++) {
+      var pad = ('00' + n).slice(-3);
+      imgs.push({ src: HB.docs + 'changes/p' + pad + '.png', alt: '3주기 변경사항 ' + n + '쪽', cap: n + ' / ' + HB.changesPages + '쪽' });
+    }
+    openDoc('3주기 운영진단 지표(편람) 변경사항', HB.name, imgs, HB.docs + 'changes/all.pdf');
+  });
   document.getElementById('summaryOpen').addEventListener('click', function (e) {
     e.stopPropagation();
     openDoc('진단지표 총괄표', HB.name + ' · 편람 10쪽', [{ src: HB.docs + 'summary.png', alt: '편람 10쪽 진단지표 총괄표: 구분·분야·영역·진단지표별 배점(총 100점)' }], HB.docs + 'summary.pdf');
