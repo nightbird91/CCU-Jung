@@ -74,6 +74,11 @@
         <a class="modal-pdf" id="docPdf" href="#" target="_blank" rel="noopener">PDF로 열기</a>
         <button type="button" class="modal-close" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
       </div>
+      <div class="zoom-ctl" role="group" aria-label="확대·축소">
+        <button type="button" data-zoom="-" aria-label="축소"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+        <output id="zoomVal" aria-live="polite">100%</output>
+        <button type="button" data-zoom="+" aria-label="확대"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+      </div>
       <div class="modal-body" id="docBody"></div>
     </div>
   </div>

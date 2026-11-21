@@ -693,7 +693,22 @@ ul.plain li:last-child { border-bottom: 0; }
 .modal-close svg { width: 20px; height: 20px; }
 .modal-close:hover { background: var(--line); }
 .modal-body { overflow: auto; -webkit-overflow-scrolling: touch; background: #fff; }
-.modal-body img { display: block; width: 100%; height: auto; }
+.modal-body img { display: block; width: calc(var(--zoom, 1) * 100%); max-width: none; height: auto; }
+/* 문서 팝업 확대·축소: 두 손가락(핀치)·두 번 탭·± 버튼. 페이지 전체가 아니라 이미지 영역만 커짐 */
+#docBody { touch-action: pan-x pan-y; }
+#docModal .modal-box { position: relative; }
+.zoom-ctl {
+  position: absolute; right: var(--sp-3); bottom: calc(var(--sp-3) + var(--safe-b)); z-index: 2;
+  display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--pop-bg) 92%, transparent); border: 1px solid var(--pop-line); box-shadow: var(--shadow-pop);
+}
+.zoom-ctl button { width: var(--touch); height: var(--touch); border: 0; border-radius: 50%; background: transparent; color: var(--text); display: grid; place-items: center; cursor: pointer; }
+.zoom-ctl button svg { width: 18px; height: 18px; }
+.zoom-ctl button:hover { background: var(--surface-2); }
+.zoom-ctl button:disabled { opacity: .35; cursor: default; }
+.zoom-ctl button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.zoom-ctl output { min-width: 44px; text-align: center; font-size: var(--fs-sm); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-2); }
+#docBody.zoom-anim img { transition: width .18s ease; }
 .modal-text { padding: 14px 18px 18px; overflow: auto; font-size: 14.5px; line-height: 1.65; }
 .modal-text ul { margin: 0; }
 .modal-text .table-wrap { margin: 0 0 var(--sp-1); }
@@ -709,7 +724,6 @@ ul.plain li:last-child { border-bottom: 0; }
 @media (max-width: 599px) {
   .modal { padding: 0; }
   .modal-box { border-radius: 0; max-height: 100vh; height: 100%; }
-  .modal-body img { width: 150%; max-width: none; }
   #infoModal { padding: var(--sp-4); align-items: flex-end; }
   #infoModal .modal-box { height: auto; max-height: 80vh; border-radius: var(--radius); }
 }

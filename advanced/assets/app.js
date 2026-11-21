@@ -288,11 +288,67 @@
     document.getElementById('docBody').innerHTML = (lead ? '<div class="doc-lead">' + lead + '</div>' : '') + imgs.map(function (m) {
       return '<figure class="doc-page"><img src="' + esc(m.src) + '" alt="' + esc(m.alt) + '" loading="lazy">' + (m.cap ? '<figcaption>' + esc(m.cap) + '</figcaption>' : '') + '</figure>';
     }).join('');
-    document.getElementById('docBody').scrollTop = 0;
+    resetZoom();
+    document.getElementById('docBody').scrollTop = 0; document.getElementById('docBody').scrollLeft = 0;
     $doc.hidden = false; document.body.classList.add('modal-open');
     $doc.querySelector('.modal-close').focus();
   }
   $doc.addEventListener('click', function (e) { if (e.target === $doc || e.target.closest('.modal-close')) closeDoc(); });
+  /* 문서 팝업 확대·축소 (두 손가락 핀치, 두 번 탭, ± 버튼) */
+  var $docBody = document.getElementById('docBody'), $zoomVal = document.getElementById('zoomVal');
+  var ZMIN = 1, ZMAX = 4, zoom = 1;
+  function zoomBase() { return window.innerWidth < 600 ? 1.5 : 1; }   // 휴대폰은 처음부터 1.5배(글자 크기 확보)
+  function setZoom(z, fx, fy, anim) {
+    z = Math.max(ZMIN, Math.min(ZMAX, Math.round(z * 100) / 100));
+    var old = zoom; if (z === old) return;
+    var r = z / old, b = $docBody, rect = b.getBoundingClientRect();
+    if (fx == null) { fx = rect.width / 2; fy = rect.height / 2; }
+    var fig = b.querySelector('.doc-page'), top0 = fig ? fig.offsetTop : 0;
+    var cx = b.scrollLeft + fx, cy = b.scrollTop + fy;
+    b.classList.toggle('zoom-anim', !!anim);
+    zoom = z; b.style.setProperty('--zoom', z);
+    b.scrollLeft = cx * r - fx;
+    b.scrollTop = (cy > top0 ? top0 + (cy - top0) * r : cy) - fy;
+    showZoom();
+  }
+  function showZoom() {
+    $zoomVal.textContent = Math.round(zoom * 100) + '%';
+    $doc.querySelector('[data-zoom="-"]').disabled = zoom <= ZMIN;
+    $doc.querySelector('[data-zoom="+"]').disabled = zoom >= ZMAX;
+  }
+  function resetZoom() { zoom = zoomBase(); $docBody.style.setProperty('--zoom', zoom); showZoom(); }
+  $doc.querySelectorAll('[data-zoom]').forEach(function (btn) {
+    btn.addEventListener('click', function () { setZoom(zoom * (btn.getAttribute('data-zoom') === '+' ? 1.25 : 0.8), null, null, true); });
+  });
+  (function () {
+    var d0 = 0, z0 = 1, lastTap = 0;
+    function dist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx * dx + dy * dy); }
+    function mid(t) { var r = $docBody.getBoundingClientRect(); return [(t[0].clientX + t[1].clientX) / 2 - r.left, (t[0].clientY + t[1].clientY) / 2 - r.top]; }
+    $docBody.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) { d0 = dist(e.touches); z0 = zoom; }
+      else if (e.touches.length === 1 && e.target.tagName === 'IMG') {
+        var now = Date.now();
+        if (now - lastTap < 300) {   // 두 번 탭: 확대 ↔ 기본 크기
+          var r = $docBody.getBoundingClientRect(), t = e.touches[0];
+          setZoom(zoom > zoomBase() + 0.01 ? zoomBase() : Math.min(ZMAX, zoomBase() * 2), t.clientX - r.left, t.clientY - r.top, true);
+          lastTap = 0; e.preventDefault();
+        } else lastTap = now;
+      }
+    }, { passive: false });
+    $docBody.addEventListener('touchmove', function (e) {
+      if (e.touches.length !== 2 || !d0) return;
+      e.preventDefault();
+      var m = mid(e.touches); setZoom(z0 * dist(e.touches) / d0, m[0], m[1], false);
+    }, { passive: false });
+    $docBody.addEventListener('touchend', function (e) { if (e.touches.length < 2) d0 = 0; });
+    // PC: Ctrl + 마우스 휠 / 트랙패드 핀치
+    $docBody.addEventListener('wheel', function (e) {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      var r = $docBody.getBoundingClientRect();
+      setZoom(zoom * Math.exp(-e.deltaY / 300), e.clientX - r.left, e.clientY - r.top, false);
+    }, { passive: false });
+  })();
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDoc(); });
   window.addEventListener('hashchange', closeDoc);
   document.getElementById('changesOpen').addEventListener('click', function (e) {
