@@ -37,6 +37,8 @@
   --mixed-soft: #e3f4f7;
   --minus: #c2410c;
   --mark: #ffe58a;
+  --action: #006b36;          /* 누를 수 있는 버튼 강조색(충청대 Green) */
+  --action-soft: #e3f1e9;
   --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 2px 8px rgba(16, 24, 40, .05);
   color-scheme: light;
 }
@@ -72,6 +74,8 @@
     --mixed-soft: #15333b;
     --minus: #fb923c;
     --mark: #7a5d00;
+    --action: #4cc38a;
+    --action-soft: #15332a;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3);
     color-scheme: dark;
   }
@@ -531,11 +535,11 @@ tr:last-child td { border-bottom: 0; }
 .sec h4 { font-size: var(--fs-base); margin: 14px 0 6px; }
 .sec-tool {
   margin-left: auto; display: inline-flex; align-items: center; gap: var(--sp-1);
-  padding: var(--sp-1) 10px; border: 1px solid var(--line); border-radius: var(--r-pill);
-  background: var(--surface); color: var(--text-2); font: inherit; font-size: var(--fs-xs); font-weight: 600; cursor: pointer; white-space: nowrap;
+  padding: var(--sp-1) 10px; border: 1px solid color-mix(in srgb, var(--action) 55%, transparent); border-radius: var(--r-pill);
+  background: var(--action-soft); color: var(--action); font: inherit; font-size: var(--fs-xs); font-weight: 700; cursor: pointer; white-space: nowrap;
 }
 .sec-tool svg { width: 14px; height: 14px; }
-.sec-tool:hover { border-color: var(--ccu-green); color: var(--ccu-green); }
+.sec-tool:hover { border-color: var(--action); background: color-mix(in srgb, var(--action) 18%, var(--surface)); }
 ul.dots { margin: 0; padding-left: 18px; }
 ul.dots li { margin: var(--sp-1) 0; }
 ul.plain { list-style: none; margin: 0; padding: 0; }
@@ -553,9 +557,9 @@ ul.plain li:last-child { border-bottom: 0; }
 }
 .el-item .t { flex: 1; }
 .el-item .ev { flex: none; font-size: var(--fs-xs); font-weight: 700; color: var(--text-2); background: var(--surface-2); padding: var(--sp-1) var(--sp-2); border-radius: var(--r-sm); white-space: nowrap; }
-.el-item .ev-btn { border: 1px solid var(--line); font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
+.el-item .ev-btn { border: 1px solid color-mix(in srgb, var(--action) 55%, transparent); background: var(--action-soft); color: var(--action); font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 3px; }
 .el-item .ev-btn::after { content: ""; width: 5px; height: 5px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor; transform: rotate(-45deg); margin-left: 2px; opacity: .7; }
-.el-item .ev-btn:hover { border-color: var(--ccu-green); color: var(--ccu-green); }
+.el-item .ev-btn:hover { border-color: var(--action); background: color-mix(in srgb, var(--action) 18%, var(--surface)); }
 .sec-tool:focus, .ev-btn:focus { outline: none; }
 .sec-tool:focus-visible, .ev-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .el-group { font-weight: 700; font-size: var(--fs-md); color: var(--mixed); padding: var(--sp-3) 0 2px; list-style: none; }
@@ -565,7 +569,7 @@ ul.plain li:last-child { border-bottom: 0; }
 /* 작성자료·지침 / 산식·척도 / 3주기 변경 버튼 (누르면 팝업) */
 .form-btn {
   width: 100%; display: flex; gap: 10px; align-items: flex-start; text-align: left; cursor: pointer;
-  border: 1px solid var(--line); border-radius: var(--r-lg); margin: var(--sp-2) 0; padding: var(--sp-3) 14px;
+  border: 1px solid color-mix(in srgb, var(--action) 35%, var(--line)); border-radius: var(--r-lg); margin: var(--sp-2) 0; padding: var(--sp-3) 14px;
   background: var(--surface); color: var(--text); font: inherit;
 }
 .form-btn .lbl { flex: none; font-size: var(--fs-xs); font-weight: 700; padding: 3px 7px; border-radius: var(--r-xs); margin-top: 1px; }
@@ -576,9 +580,8 @@ ul.plain li:last-child { border-bottom: 0; }
 .form-btn .lbl.변경 { background: var(--dept-soft); color: var(--dept); }
 .form-btn .ttl { flex: 1; font-weight: 600; font-size: var(--fs-base); line-height: 1.45; }
 .form-btn .ttl small { display: block; font-size: var(--fs-xs); font-weight: 500; color: var(--text-3); margin-top: 2px; }
-.form-btn .pdf-ic { flex: none; width: 18px; height: 18px; color: var(--text-3); margin-top: 2px; }
-.form-btn:hover { border-color: var(--ccu-green); }
-.form-btn:hover .pdf-ic { color: var(--ccu-green); }
+.form-btn .pdf-ic { flex: none; width: 20px; height: 20px; color: var(--action); margin-top: 1px; }
+.form-btn:hover { border-color: var(--action); background: color-mix(in srgb, var(--action) 6%, var(--surface)); }
 .form-btn:focus { outline: none; }
 .form-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
@@ -620,9 +623,11 @@ ul.plain li:last-child { border-bottom: 0; }
 .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: var(--sp-2); }
 .pager a {
   display: block; text-decoration: none; color: inherit; background: var(--surface);
-  border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--sp-3); font-size: var(--fs-md); min-height: 64px;
+  border: 1.5px solid var(--action); border-radius: var(--r-lg); padding: var(--sp-3); font-size: var(--fs-md); font-weight: 600; min-height: 64px;
 }
-.pager a small { display: block; color: var(--text-3); font-size: var(--fs-xs); }
+.pager a small { display: block; color: var(--action); font-size: var(--fs-xs); font-weight: 700; }
+.pager a:hover { background: var(--action-soft); }
+.pager a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .pager a.next { text-align: right; }
 .pager .ghost { visibility: hidden; }
 
