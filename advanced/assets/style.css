@@ -470,7 +470,7 @@ details.area > summary {
   display: flex; align-items: center; gap: var(--sp-2); font-weight: 600; font-size: var(--fs-base);
 }
 details.area > summary::-webkit-details-marker { display: none; }
-details.area > summary .aid { font-size: var(--fs-xs); color: var(--text-3); font-weight: 700; }
+details.area > summary .aid { font-size: var(--fs-xs); color: var(--text-3); font-weight: 700; white-space: nowrap; flex: none; }
 details.area > summary .apts { margin-left: auto; font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
 details.area > summary .caret { transition: transform .2s; color: var(--text-3); flex: none; }
 details.area[open] > summary .caret { transform: rotate(90deg); }
@@ -489,11 +489,11 @@ details.area[open] > summary .caret { transform: rotate(90deg); }
 .ind .ipts {
   grid-row: 1 / span 3; grid-column: 2; align-self: center;
   display: inline-flex; align-items: baseline; justify-content: center; gap: 1px;
-  box-sizing: border-box; width: 56px; padding: 3px 0; border-radius: var(--r-pill);
-  font-size: var(--fs-lg); font-weight: 800; line-height: 1.2; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;
+  box-sizing: border-box; width: 40px; padding: 2px 0; border-radius: var(--r-pill);
+  font-size: var(--fs-2xs); font-weight: 800; line-height: 1.2; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;
   color: hsl(var(--h, 220) 70% var(--pts-l)); background: hsl(var(--h, 220) 75% var(--pts-bg));
 }
-.ind .ipts small { display: inline; font-size: var(--fs-xs); color: inherit; font-weight: 700; }
+.ind .ipts small { display: inline; font-size: 9px; color: inherit; font-weight: 700; }
 .deduction { display: flex; align-items: center; gap: 10px; padding: 14px var(--sp-4); border-top: 1px solid var(--line); font-size: var(--fs-md); }
 .deduction b { color: var(--minus); margin-left: auto; font-size: 17px; }
 
