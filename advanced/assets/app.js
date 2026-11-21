@@ -539,6 +539,25 @@
     else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
   });
 
+  /* 화면 바탕: 자동(기기 설정) · 흰 바탕 · 검은 바탕 (localStorage jsh-theme) */
+  function applyTheme(t) {
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    else document.documentElement.removeAttribute('data-theme');
+    document.querySelectorAll('[data-theme-set]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-theme-set') === (t || 'auto') ? 'true' : 'false'); });
+  }
+  (function () {
+    var t = 'auto'; try { t = localStorage.getItem('jsh-theme') || 'auto'; } catch (e) {}
+    applyTheme(t);
+    document.querySelectorAll('[data-theme-set]').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var v = b.getAttribute('data-theme-set');
+        try { localStorage.setItem('jsh-theme', v); } catch (er) {}
+        applyTheme(v);
+      });
+    });
+  })();
+
   var spy = null, spyLock = 0;
   function setTocOn(a) {
     $app.querySelectorAll('.toc a').forEach(function (x) { x.classList.toggle('on', x === a); x.removeAttribute('aria-current'); });
