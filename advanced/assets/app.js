@@ -526,6 +526,19 @@
     $info.querySelector('.modal-close').focus();
   }
 
+  /* 팝업이 열려 있으면 Tab 키 포커스를 팝업 안에서만 돌게 함 */
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Tab') return;
+    var m = document.querySelector('.modal:not([hidden])');
+    if (!m) return;
+    var f = Array.prototype.filter.call(m.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])'), function (el) { return el.offsetParent !== null; });
+    if (!f.length) return;
+    var first = f[0], last = f[f.length - 1];
+    if (!m.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  });
+
   var spy = null, spyLock = 0;
   function setTocOn(a) {
     $app.querySelectorAll('.toc a').forEach(function (x) { x.classList.toggle('on', x === a); x.removeAttribute('aria-current'); });
@@ -882,7 +895,14 @@
   function loadJSON(path) {
     var inl = document.querySelector('script[type="application/json"][data-src="' + path + '"]');
     if (inl) return Promise.resolve(JSON.parse(inl.textContent));
-    return fetch(path, { cache: 'no-cache' }).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+    // 느린 회선: 20초가 지나면 오류 화면(다시 시도)으로 전환
+    var ctl = window.AbortController ? new AbortController() : null;
+    var timer = ctl ? setTimeout(function () { ctl.abort(); }, 20000) : 0;
+    return fetch(path, { cache: 'no-cache', signal: ctl ? ctl.signal : undefined }).then(function (r) {
+      clearTimeout(timer);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }, function (e) { clearTimeout(timer); throw new Error(e && e.name === 'AbortError' ? '응답 시간 초과' : '네트워크 오류'); });
   }
   function renderHbInfo() {
     var $sel = document.getElementById('hbSelect');
@@ -907,15 +927,29 @@
   }
   document.getElementById('hbSelect').addEventListener('change', function (e) {
     var h = HBS.filter(function (x) { return x.id === e.target.value; })[0];
-    if (h && h !== HB) useHandbook(h).catch(fail);
+    if (h && h !== HB) { showLoading(h.name + '을(를) 불러오는 중입니다'); useHandbook(h).catch(fail); }
   });
-  function fail(e) {
-    $app.innerHTML = '<p class="empty">데이터를 불러오지 못했습니다 (' + esc(e.message) + ').<br>로컬 파일로 열었다면 웹 서버(GitHub Pages 등)를 통해 열어 주세요.</p>';
+  /* 불러오는 중 · 오류(다시 시도) 상태 */
+  function showLoading(msg) {
+    $app.innerHTML = '<div class="state" role="status"><div class="spinner" aria-hidden="true"></div><b>' + esc(msg || '편람을 불러오는 중입니다') + '</b><p>잠시만 기다려 주세요.</p></div>';
   }
-  loadJSON('data/handbooks.json').then(function (list) {
-    HBS = list;
-    var saved = null; try { saved = localStorage.getItem('jsh-hb'); } catch (e) {}
-    var h = list.filter(function (x) { return x.id === saved; })[0] || list[0];
-    return useHandbook(h);
-  }).catch(fail);
+  function fail(e) {
+    var local = location.protocol === 'file:';
+    $app.innerHTML = '<div class="state" role="alert"><b>편람 데이터를 불러오지 못했습니다</b><p>' +
+      (local ? '파일을 직접 열면 데이터를 읽을 수 없습니다. 웹 주소(GitHub Pages 등)로 접속해 주세요.' : '인터넷 연결을 확인한 뒤 다시 시도해 주세요.') +
+      ' <span class="muted">(' + esc(e && e.message || '알 수 없는 오류') + ')</span></p>' +
+      '<button type="button" class="retry-btn" data-retry>다시 시도</button></div>';
+    var b = $app.querySelector('[data-retry]');
+    b.addEventListener('click', boot); b.focus();
+  }
+  function boot() {
+    showLoading();
+    return loadJSON('data/handbooks.json').then(function (list) {
+      HBS = list;
+      var saved = null; try { saved = localStorage.getItem('jsh-hb'); } catch (e) {}
+      var h = list.filter(function (x) { return x.id === saved; })[0] || list[0];
+      return useHandbook(h);
+    }).catch(fail);
+  }
+  boot();
 })();
