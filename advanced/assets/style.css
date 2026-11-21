@@ -911,3 +911,7 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
   .hero #settingsBtn svg, .hero #menuBtn svg { width: 18px; height: 18px; }
   .hero #settingsBtn::after, .hero #menuBtn::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; }
 }
+/* 휴대폰(제목 두 줄): 목차·설정 아이콘을 둘째 줄 "운영진단 편람" 높이로 */
+@media (max-width: 599px) {
+  .hero .settings-btn#settingsBtn, .hero .settings-btn#menuBtn { transform: translateY(calc(-50% + 14px)); }
+}
