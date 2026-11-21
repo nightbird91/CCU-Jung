@@ -294,61 +294,63 @@
     $doc.querySelector('.modal-close').focus();
   }
   $doc.addEventListener('click', function (e) { if (e.target === $doc || e.target.closest('.modal-close')) closeDoc(); });
-  /* 문서 팝업 확대·축소 (두 손가락 핀치, 두 번 탭, ± 버튼) */
-  var $docBody = document.getElementById('docBody'), $zoomVal = document.getElementById('zoomVal');
-  var ZMIN = 1, ZMAX = 4, zoom = 1;
-  function zoomBase() { return window.innerWidth < 600 ? 1.5 : 1; }   // 휴대폰은 처음부터 1.5배(글자 크기 확보)
-  function setZoom(z, fx, fy, anim) {
-    z = Math.max(ZMIN, Math.min(ZMAX, Math.round(z * 100) / 100));
-    var old = zoom; if (z === old) return;
-    var r = z / old, b = $docBody, rect = b.getBoundingClientRect();
-    if (fx == null) { fx = rect.width / 2; fy = rect.height / 2; }
-    var fig = b.querySelector('.doc-page'), top0 = fig ? fig.offsetTop : 0;
-    var cx = b.scrollLeft + fx, cy = b.scrollTop + fy;
-    b.classList.toggle('zoom-anim', !!anim);
-    zoom = z; b.style.setProperty('--zoom', z);
-    b.scrollLeft = cx * r - fx;
-    b.scrollTop = (cy > top0 ? top0 + (cy - top0) * r : cy) - fy;
-    showZoom();
-  }
-  function showZoom() {
-    $zoomVal.textContent = Math.round(zoom * 100) + '%';
-    $doc.querySelector('[data-zoom="-"]').disabled = zoom <= ZMIN;
-    $doc.querySelector('[data-zoom="+"]').disabled = zoom >= ZMAX;
-  }
-  function resetZoom() { zoom = zoomBase(); $docBody.style.setProperty('--zoom', zoom); showZoom(); }
-  $doc.querySelectorAll('[data-zoom]').forEach(function (btn) {
-    btn.addEventListener('click', function () { setZoom(zoom * (btn.getAttribute('data-zoom') === '+' ? 1.25 : 0.8), null, null, true); });
-  });
-  (function () {
+  /* 팝업 확대·축소 (두 손가락 핀치, 두 번 탭, ± 버튼, PC는 Ctrl+휠)
+     scroller: 스크롤 영역, ctl: ±버튼 묶음, base(): 열 때 배율, apply(z): 배율 적용 */
+  function makeZoomable(scroller, ctl, base, apply, topOf) {
+    var ZMIN = 1, ZMAX = 4, z = 1, out = ctl.querySelector('output');
+    function show() {
+      out.textContent = Math.round(z * 100) + '%';
+      ctl.querySelector('[data-zoom="-"]').disabled = z <= ZMIN;
+      ctl.querySelector('[data-zoom="+"]').disabled = z >= ZMAX;
+    }
+    function set(nz, fx, fy) {
+      nz = Math.max(ZMIN, Math.min(ZMAX, Math.round(nz * 100) / 100));
+      if (nz === z) return;
+      var r = nz / z, rect = scroller.getBoundingClientRect();
+      if (fx == null) { fx = rect.width / 2; fy = rect.height / 2; }
+      var top0 = topOf ? topOf() : 0, cx = scroller.scrollLeft + fx, cy = scroller.scrollTop + fy;
+      z = nz; apply(z);
+      scroller.scrollLeft = cx * r - fx;
+      scroller.scrollTop = (cy > top0 ? top0 + (cy - top0) * r : cy) - fy;
+      show();
+    }
+    ctl.querySelectorAll('[data-zoom]').forEach(function (btn) {
+      btn.addEventListener('click', function () { set(z * (btn.getAttribute('data-zoom') === '+' ? 1.25 : 0.8)); });
+    });
     var d0 = 0, z0 = 1, lastTap = 0;
     function dist(t) { var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY; return Math.sqrt(dx * dx + dy * dy); }
-    function mid(t) { var r = $docBody.getBoundingClientRect(); return [(t[0].clientX + t[1].clientX) / 2 - r.left, (t[0].clientY + t[1].clientY) / 2 - r.top]; }
-    $docBody.addEventListener('touchstart', function (e) {
-      if (e.touches.length === 2) { d0 = dist(e.touches); z0 = zoom; }
-      else if (e.touches.length === 1 && e.target.tagName === 'IMG') {
+    scroller.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) { d0 = dist(e.touches); z0 = z; }
+      else if (e.touches.length === 1 && !e.target.closest('a, button')) {
         var now = Date.now();
-        if (now - lastTap < 300) {   // 두 번 탭: 확대 ↔ 기본 크기
-          var r = $docBody.getBoundingClientRect(), t = e.touches[0];
-          setZoom(zoom > zoomBase() + 0.01 ? zoomBase() : Math.min(ZMAX, zoomBase() * 2), t.clientX - r.left, t.clientY - r.top, true);
+        if (now - lastTap < 300) {   // 두 번 탭: 2배 ↔ 기본
+          var r = scroller.getBoundingClientRect(), t = e.touches[0];
+          set(z > base() + 0.01 ? base() : base() * 2, t.clientX - r.left, t.clientY - r.top);
           lastTap = 0; e.preventDefault();
         } else lastTap = now;
       }
     }, { passive: false });
-    $docBody.addEventListener('touchmove', function (e) {
+    scroller.addEventListener('touchmove', function (e) {
       if (e.touches.length !== 2 || !d0) return;
       e.preventDefault();
-      var m = mid(e.touches); setZoom(z0 * dist(e.touches) / d0, m[0], m[1], false);
+      var r = scroller.getBoundingClientRect(), t = e.touches;
+      set(z0 * dist(t) / d0, (t[0].clientX + t[1].clientX) / 2 - r.left, (t[0].clientY + t[1].clientY) / 2 - r.top);
     }, { passive: false });
-    $docBody.addEventListener('touchend', function (e) { if (e.touches.length < 2) d0 = 0; });
-    // PC: Ctrl + 마우스 휠 / 트랙패드 핀치
-    $docBody.addEventListener('wheel', function (e) {
+    scroller.addEventListener('touchend', function (e) { if (e.touches.length < 2) d0 = 0; });
+    scroller.addEventListener('wheel', function (e) {
       if (!e.ctrlKey) return;
       e.preventDefault();
-      var r = $docBody.getBoundingClientRect();
-      setZoom(zoom * Math.exp(-e.deltaY / 300), e.clientX - r.left, e.clientY - r.top, false);
+      var r = scroller.getBoundingClientRect();
+      set(z * Math.exp(-e.deltaY / 300), e.clientX - r.left, e.clientY - r.top);
     }, { passive: false });
-  })();
+    return { reset: function () { z = base(); apply(z); show(); } };
+  }
+  var $docBody = document.getElementById('docBody');
+  var docZoom = makeZoomable($docBody, $doc.querySelector('.zoom-ctl'),
+    function () { return window.innerWidth < 600 ? 1.5 : 1; },     // 휴대폰은 처음부터 1.5배(글자 크기 확보)
+    function (z) { $docBody.style.setProperty('--zoom', z); },
+    function () { var f = $docBody.querySelector('.doc-page'); return f ? f.offsetTop : 0; });
+  function resetZoom() { docZoom.reset(); }
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeDoc(); });
   window.addEventListener('hashchange', closeDoc);
   document.getElementById('changesOpen').addEventListener('click', function (e) {
@@ -561,14 +563,19 @@
   }
 
   /* ---------- 공용 팝업 (용어의 정의 등) ---------- */
-  var $info = null, infoLast = null;
+  var $info = null, infoLast = null, infoZoom = null;
   function closeInfo() { if (!$info || $info.hidden) return; $info.hidden = true; document.body.classList.remove('modal-open'); if (infoLast) infoLast.focus(); }
   function openInfo(title, sub, html, wide) {
     if (!$info) {
       $info = document.createElement('div');
       $info.className = 'modal'; $info.id = 'infoModal'; $info.hidden = true;
       $info.setAttribute('role', 'dialog'); $info.setAttribute('aria-modal', 'true'); $info.setAttribute('aria-labelledby', 'infoTitle');
-      $info.innerHTML = '<div class="modal-box modal-sm"><div class="modal-head"><b id="infoTitle"></b><button type="button" class="modal-close" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div><div class="modal-text"></div></div>';
+      $info.innerHTML = '<div class="modal-box modal-sm"><div class="modal-head"><b id="infoTitle"></b><button type="button" class="modal-close" aria-label="닫기"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>' +
+        '<div class="modal-text"><div class="zoom-in"></div></div>' +
+        '<div class="zoom-ctl" role="group" aria-label="확대·축소"><button type="button" data-zoom="-" aria-label="축소"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/></svg></button><output aria-live="polite">100%</output><button type="button" data-zoom="+" aria-label="확대"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div></div>';
+      var $zin = $info.querySelector('.zoom-in');
+      infoZoom = makeZoomable($info.querySelector('.modal-text'), $info.querySelector('.zoom-ctl'),
+        function () { return 1; }, function (z) { $zin.style.zoom = z; });
       document.body.appendChild($info);
       $info.addEventListener('click', function (e) { if (e.target === $info || e.target.closest('.modal-close')) closeInfo(); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeInfo(); });
@@ -576,7 +583,8 @@
     }
     infoLast = document.activeElement;
     $info.querySelector('#infoTitle').innerHTML = esc(title) + (sub ? ' <small>' + esc(sub) + '</small>' : '');
-    $info.querySelector('.modal-text').innerHTML = html;
+    $info.querySelector('.zoom-in').innerHTML = html;
+    infoZoom.reset(); $info.querySelector('.modal-text').scrollTop = 0;
     $info.querySelector('.modal-box').classList.toggle('modal-wide', !!wide);
     $info.hidden = false; document.body.classList.add('modal-open');
     $info.querySelector('.modal-close').focus();
@@ -600,6 +608,7 @@
     if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     else document.documentElement.removeAttribute('data-theme');
     document.querySelectorAll('[data-theme-set]').forEach(function (b) { b.setAttribute('aria-pressed', b.getAttribute('data-theme-set') === (t || 'auto') ? 'true' : 'false'); });
+    var cur = document.getElementById('themeCur'); if (cur) cur.textContent = { light: '흰 바탕', dark: '검은 바탕' }[t] || '자동';
   }
   (function () {
     var t = 'auto'; try { t = localStorage.getItem('jsh-theme') || 'auto'; } catch (e) {}

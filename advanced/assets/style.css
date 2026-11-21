@@ -220,6 +220,14 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
 .theme-seg button[aria-pressed="true"] { background: var(--action); color: var(--action-ink); font-weight: 700; }
 .theme-seg button:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
 .settings-theme { margin-bottom: var(--sp-3); padding-bottom: var(--sp-3); border-bottom: 1px solid var(--pop-line); }
+.settings-theme > summary { list-style: none; display: flex; align-items: center; gap: var(--sp-2); cursor: pointer; min-height: 32px; border-radius: var(--r-sm); }
+.settings-theme > summary::-webkit-details-marker { display: none; }
+.settings-theme > summary span { font-size: var(--fs-xs); color: var(--text-3); font-weight: 600; }
+.settings-theme > summary b { margin-left: auto; font-size: var(--fs-sm); color: var(--text); }
+.settings-theme > summary .caret { width: 16px; height: 16px; color: var(--text-3); flex: none; transition: transform .2s; }
+.settings-theme[open] > summary .caret { transform: rotate(90deg); }
+.settings-theme > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.settings-theme .theme-seg { margin-top: var(--sp-2); }
 .settings-row { display: flex; flex-direction: column; gap: 2px; font-size: var(--fs-md); }
 .settings-row span { font-size: var(--fs-xs); color: var(--text-3); font-weight: 600; }
 .settings-select {
@@ -695,8 +703,9 @@ ul.plain li:last-child { border-bottom: 0; }
 .modal-body { overflow: auto; -webkit-overflow-scrolling: touch; background: #fff; }
 .modal-body img { display: block; width: calc(var(--zoom, 1) * 100%); max-width: none; height: auto; }
 /* 문서 팝업 확대·축소: 두 손가락(핀치)·두 번 탭·± 버튼. 페이지 전체가 아니라 이미지 영역만 커짐 */
-#docBody { touch-action: pan-x pan-y; }
-#docModal .modal-box { position: relative; }
+#docBody, .modal-text { touch-action: pan-x pan-y; }
+.modal .modal-box { position: relative; }
+#infoModal .modal-text { padding-bottom: 72px; }   /* ± 버튼에 가리지 않게 */
 .zoom-ctl {
   position: absolute; right: var(--sp-3); bottom: calc(var(--sp-3) + var(--safe-b)); z-index: 2;
   display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: var(--r-pill);
@@ -708,7 +717,6 @@ ul.plain li:last-child { border-bottom: 0; }
 .zoom-ctl button:disabled { opacity: .35; cursor: default; }
 .zoom-ctl button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
 .zoom-ctl output { min-width: 44px; text-align: center; font-size: var(--fs-sm); font-weight: 700; font-variant-numeric: tabular-nums; color: var(--text-2); }
-#docBody.zoom-anim img { transition: width .18s ease; }
 .modal-text { padding: 14px 18px 18px; overflow: auto; font-size: 14.5px; line-height: 1.65; }
 .modal-text ul { margin: 0; }
 .modal-text .table-wrap { margin: 0 0 var(--sp-1); }
