@@ -122,7 +122,7 @@
 
 ### 8. 새 편람(다음 연도) 추가 방법
 1. `data/manual-<연도>.json`을 `manual.json`과 같은 구조로 만듭니다.
-2. `docs/<연도>/`에 `summary.png/pdf`(총괄표), `pages/pNNN.png`(원문 쪽 이미지, 130dpi), `forms/*.pdf`, `changes/`를 넣습니다.
+2. `docs/<연도>/`에 `summary.png/pdf`(진단지표 총괄표, 10쪽), `quant.png/pdf`(정량요소 총괄표, 11쪽), `pages/pNNN.png`(원문 쪽 이미지, 130dpi), `forms/*.pdf`, `changes/`를 넣습니다.
 3. `data/handbooks.json`에 한 줄을 추가합니다: `id`, `name`, `evalYear`, `baseYear`(진단기준년도), `cycle`, `published`, `data`, `docs`, `changesPages`.
 4. 설정의 "기준 편람"에 자동으로 나타납니다.
 

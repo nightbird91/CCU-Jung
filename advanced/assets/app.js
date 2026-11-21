@@ -362,6 +362,11 @@
     }
     openDoc('3주기 운영진단 지표(편람) 변경사항', HB.name, imgs, HB.docs + 'changes/all.pdf');
   });
+  function openQuant(e) {
+    if (e) e.stopPropagation();
+    openDoc('정량요소 총괄표', HB.name + ' · 편람 11쪽', [{ src: HB.docs + 'quant.png', alt: '편람 11쪽 정량요소 총괄표: 진단지표별 정량요소·근거자료·자료기준·공시시기' }], HB.docs + 'quant.pdf');
+  }
+  document.getElementById('quantOpen').addEventListener('click', openQuant);
   document.getElementById('summaryOpen').addEventListener('click', function (e) {
     e.stopPropagation();
     openDoc('진단지표 총괄표', HB.name + ' · 편람 10쪽', [{ src: HB.docs + 'summary.png', alt: '편람 10쪽 진단지표 총괄표: 구분·분야·영역·진단지표별 배점(총 100점)' }], HB.docs + 'summary.pdf');
@@ -901,7 +906,7 @@
 
     h += '<section class="card"><h3 style="margin:0 0 8px">진단 대상 <span class="muted">(' + esc(P.target.base) + ')</span></h3><ul class="dots">' + P.target.items.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul><h4>진단 제외 대상</h4><ul class="dots">' + P.target.excluded.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></section>';
 
-    h += '<section class="card"><h3 style="margin:0 0 8px">정량요소 총괄표</h3><div class="table-wrap"><table><thead><tr><th>진단지표</th><th>정량요소</th><th>근거자료</th><th>자료기준</th><th class="num">공시시기</th></tr></thead><tbody>' +
+    h += '<section class="card"><h3 style="margin:0 0 8px;display:flex;align-items:center;gap:8px">정량요소 총괄표<button type="button" class="sec-tool" data-quant aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>편람 11쪽 원문</button></h3><div class="table-wrap"><table><thead><tr><th>진단지표</th><th>정량요소</th><th>근거자료</th><th>자료기준</th><th class="num">공시시기</th></tr></thead><tbody>' +
       DATA.quantSummary.map(function (q) { return '<tr><td>' + esc(q.indicator) + '</td><td>' + esc(q.element) + '</td><td>' + esc(q.source) + '</td><td>' + esc(q.base) + '</td><td class="num">' + esc(q.disclosure) + '</td></tr>'; }).join('') +
       '</tbody></table></div><p class="muted" style="margin:8px 0 0">표는 좌우로 밀어서 볼 수 있습니다.</p></section>';
 
@@ -911,6 +916,7 @@
 
     h += '<section class="card"><h3 style="margin:0 0 8px">추진배경 및 질 관리체계 변화</h3><ul class="dots">' + P.background.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul><h4>연혁</h4><ul class="timeline">' + P.history.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul></section>';
     $app.innerHTML = h;
+    var qb = $app.querySelector('[data-quant]'); if (qb) qb.addEventListener('click', openQuant);
   }
 
   /* ---------- changes ---------- */
