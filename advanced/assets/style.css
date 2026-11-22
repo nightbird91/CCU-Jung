@@ -43,6 +43,7 @@
   --action-ink: #ffffff;      /* 강조색 위 글자 */
   --ev: #be185d;              /* 진단요소 옆 증빙 번호 버튼 */
   --ev-soft: #fce7f1;
+  --hi: #155e75;
   --shadow: 0 1px 2px rgba(16, 24, 40, .05), 0 2px 8px rgba(16, 24, 40, .05);
   color-scheme: light;
 }
@@ -84,8 +85,10 @@
     --action-ink: #1a1500;
   --ev: #ff9bbd;
   --ev-soft: #3a1d2a;
+  --hi: #7ee8fa;
     --ev: #ff9bbd;
     --ev-soft: #3a1d2a;
+    --hi: #7ee8fa;
     --focus: #ffffff;
     --shadow: 0 1px 2px rgba(0, 0, 0, .3);
     color-scheme: dark;
@@ -127,6 +130,7 @@
   --action-ink: #1a1500;
   --ev: #ff9bbd;
   --ev-soft: #3a1d2a;
+  --hi: #7ee8fa;
   --focus: #ffffff;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3);
   color-scheme: dark;
@@ -628,6 +632,7 @@ tr:last-child td { border-bottom: 0; }
 .sec-tool svg { width: 11px; height: 11px; }
 .sec-tool:hover { border-color: var(--action); background: color-mix(in srgb, var(--action) 18%, var(--surface)); }
 ul.dots { margin: 0; padding-left: 18px; }
+.em-hi { color: var(--hi); font-weight: 700; }
 .quant-list { list-style: none; margin: 0; padding: 0; }
 .quant-list li + li { border-top: 1px solid var(--line); }
 .quant-list a { display: flex; align-items: baseline; gap: 10px; padding: 9px 2px; text-decoration: none; color: var(--text); font-size: var(--fs-md); font-weight: 600; }

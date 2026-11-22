@@ -147,6 +147,12 @@
     return h || '<p class="empty">해당 유형의 지표가 없습니다.</p>';
   }
 
+  // 3주기 변경 문구 강조: 운영위원회 기능 문장 전체, '외국인 유학생' 단어
+  function emphChange(c) {
+    var t = esc(c).replace(/외국인 유학생/g, '<span class="em-hi">외국인 유학생</span>');
+    return c.indexOf('운영위원회 기능') >= 0 ? '<span class="em-hi">' + t + '</span>' : t;
+  }
+
   function areaHue(a) {
     var all = [];
     DATA.categories.forEach(function (c) { c.fields.forEach(function (f) { f.areas.forEach(function (x) { all.push(x.id); }); }); });
@@ -515,7 +521,7 @@
     if (ind.changes) {
       sec('ch', '3주기 변경', '<p class="muted" style="margin-top:-4px">항목을 누르면 변경사항 원문(개정 전·후 비교)이 팝업으로 열립니다.</p>' +
         ind.changes.map(function (c, ci) {
-          return '<button type="button" class="form form-btn ch-btn" data-ch="' + ci + '" aria-haspopup="dialog"><span class="lbl 변경">변경</span><span class="ttl">' + esc(c) + '</span>' +
+          return '<button type="button" class="form form-btn ch-btn" data-ch="' + ci + '" aria-haspopup="dialog"><span class="lbl 변경">변경</span><span class="ttl">' + emphChange(c) + '</span>' +
             '<svg class="pdf-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg></button>';
         }).join(''));
     }
@@ -556,7 +562,7 @@
     $app.querySelectorAll('[data-ch]').forEach(function (b) {
       b.addEventListener('click', function () {
         var ci = +b.getAttribute('data-ch');
-        var lead = '<b class="doc-lead-t">3주기 변경 요약</b><ul class="dots">' + ind.changes.map(function (c, i) { return '<li' + (i === ci ? ' class="hl"' : '') + '>' + esc(c) + '</li>'; }).join('') + '</ul>';
+        var lead = '<b class="doc-lead-t">3주기 변경 요약</b><ul class="dots">' + ind.changes.map(function (c, i) { return '<li' + (i === ci ? ' class="hl"' : '') + '>' + emphChange(c) + '</li>'; }).join('') + '</ul>';
         var pg = ind.changePages || [];
         if (!pg.length) lead += '<p class="muted" style="margin:8px 0 0">변경사항 원문에는 이 지표의 개별 비교표가 없고, 공통 변경 사항만 해당됩니다. 위 "PDF로 열기"에서 변경사항 전체를 볼 수 있습니다.</p>';
         openDoc('3주기 변경 사항', ind.id + ' ' + ind.name, pg.map(function (n) {
@@ -974,7 +980,7 @@
     INDEX.forEach(function (ind) {
       if (!ind.changes) return;
       var none = ind.changes.length === 1 && ind.changes[0].indexOf('변경 없음') >= 0;
-      h += '<a class="card result" href="#/i/' + ind.id + '" style="' + (none ? 'opacity:.7' : '') + '"><div style="display:flex;gap:8px;align-items:center"><span class="chip score">' + esc(ind.id) + '</span><b style="flex:1">' + esc(ind.name) + '</b>' + typeChip(ind.type) + '</div><ul class="dots" style="margin-top:8px;font-size:14px;color:var(--text-2)">' + ind.changes.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></a>';
+      h += '<a class="card result" href="#/i/' + ind.id + '" style="' + (none ? 'opacity:.7' : '') + '"><div style="display:flex;gap:8px;align-items:center"><span class="chip score">' + esc(ind.id) + '</span><b style="flex:1">' + esc(ind.name) + '</b>' + typeChip(ind.type) + '</div><ul class="dots" style="margin-top:8px;font-size:14px;color:var(--text-2)">' + ind.changes.map(function (c) { return '<li>' + emphChange(c) + '</li>'; }).join('') + '</ul></a>';
     });
     $app.innerHTML = h;
   }
