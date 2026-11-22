@@ -508,7 +508,6 @@ details.area[open] > summary .caret { transform: rotate(90deg); }
 .ind .iid { font-size: var(--fs-xs); font-weight: 700; color: var(--primary); }
 .ind .iname { font-weight: 600; font-size: var(--fs-base); line-height: 1.4; grid-column: 1; }
 .ind .ichips { display: flex; gap: 6px; flex-wrap: wrap; grid-column: 1; }
-.ind-sub { font-size: var(--fs-sm); color: var(--text-2); grid-column: 1; }
 /* 점수 배지: 지표마다 다른 색(--h), 같은 폭, "5점" 한 줄 */
 .ind .ipts {
   grid-row: 1 / span 3; grid-column: 2; align-self: center;
