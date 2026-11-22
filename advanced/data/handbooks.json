@@ -8,6 +8,38 @@
     "published": "2026. 05.",
     "data": "data/manual.json",
     "docs": "docs/2027/",
-    "changesPages": 17
+    "changesPages": 17,
+    "planPages": {
+      "overview": {
+        "from": 3,
+        "to": 6,
+        "pdf": "plan/overview.pdf",
+        "label": "편람 2~5쪽"
+      },
+      "grade": {
+        "from": 8,
+        "to": 9,
+        "pdf": "plan/result.pdf",
+        "label": "편람 7~8쪽"
+      },
+      "content": {
+        "from": 7,
+        "to": 7,
+        "pdf": "plan/content.pdf",
+        "label": "편람 6쪽"
+      },
+      "schedule": {
+        "from": 8,
+        "to": 9,
+        "pdf": "plan/result.pdf",
+        "label": "편람 7~8쪽"
+      },
+      "target": {
+        "from": 6,
+        "to": 6,
+        "pdf": "plan/target.pdf",
+        "label": "편람 5쪽"
+      }
+    }
   }
 ]

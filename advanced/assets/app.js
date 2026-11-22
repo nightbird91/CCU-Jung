@@ -888,12 +888,18 @@
   }
 
   /* ---------- plan ---------- */
+  // 기본계획 블록별 "편람 N쪽" 원문 버튼 (handbooks.json 의 planPages 가 있을 때만)
+  function planBtn(key, title) {
+    var d = HB.planPages && HB.planPages[key];
+    if (!d) return '';
+    return '<button type="button" class="sec-tool" data-plandoc="' + key + '" data-title="' + esc(title) + '" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>' + esc(d.label) + '</button>';
+  }
   function viewPlan() {
     var P = DATA.plan;
     setTitle('운영진단 기본계획', DATA.meta.cycle);
     setTab('plan');
     var h = '';
-    h += '<section class="card fold-card"><details class="fold"><summary><span class="fold-t"><b>기본계획 개요</b><small>기본방향 · 추진 체계 · 추진배경 · 연혁</small></span><span class="fold-hint">펼쳐 보기</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary><div class="fold-body">';
+    h += '<section class="card fold-card"><details class="fold"><summary><span class="fold-t"><b>기본계획 개요</b><small>기본방향 · 추진 체계 · 추진배경 · 연혁</small></span>' + planBtn('overview', '기본계획 개요') + '<span class="fold-hint">펼쳐 보기</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary><div class="fold-body">';
     h += '<div class="fold-sec"><h4>기본방향</h4><div class="kv">' + P.principles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></div>';
 
     h += '<div class="fold-sec"><h4>추진 체계</h4><div class="kv">' + P.roles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></div>';
@@ -901,20 +907,20 @@
     h += '<div class="fold-sec"><h4>추진배경 및 질 관리체계 변화</h4><ul class="dots">' + P.background.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div><div class="fold-sec"><h4>연혁</h4><ul class="timeline">' + P.history.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul></div>';
     h += '</div></details></section>';
 
-    h += '<section class="card"><h3 style="margin:0 0 8px">등급 부여 및 활용</h3><p class="muted" style="margin:0 0 6px">' + esc(P.gradeNote) + '</p>';
+    h += '<section class="card"><h3 class="card-h">등급 부여 및 활용' + planBtn('grade', '등급 부여 및 활용') + '</h3><p class="muted" style="margin:0 0 6px">' + esc(P.gradeNote) + '</p>';
     P.grades.forEach(function (g) {
       h += '<div class="grade"><div class="g ' + g.grade + '">' + g.grade + '</div><div><div class="rng">' + esc(g.label) + ' · ' + esc(g.range) + '</div><dl><dt>당해년</dt><dd>' + esc(g.y1) + '</dd><dt>2차년</dt><dd>' + esc(g.y2) + '</dd><dt>3차년</dt><dd>' + esc(g.y3) + '</dd></dl></div></div>';
     });
     h += '</section>';
 
-    h += '<section class="card"><h3 style="margin:0 0 8px">진단 내용</h3><ul class="dots">' + P.content.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>' +
+    h += '<section class="card"><h3 class="card-h">진단 내용' + planBtn('content', '진단 내용') + '</h3><ul class="dots">' + P.content.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul>' +
       '<h4>정량 자료 활용</h4><ul class="dots">' + P.quantData.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></section>';
 
-    h += '<section class="card"><h3 style="margin:0 0 8px">연차별 대상 및 시기</h3><ul class="timeline">' + P.schedule.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul><div class="callout">※ ' + esc(P.scheduleNote) + '</div></section>';
+    h += '<section class="card"><h3 class="card-h">연차별 대상 및 시기' + planBtn('schedule', '연차별 대상 및 시기') + '</h3><ul class="timeline">' + P.schedule.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul><div class="callout">※ ' + esc(P.scheduleNote) + '</div></section>';
 
-    h += '<section class="card"><h3 style="margin:0 0 8px">진단 대상 <span class="muted">(' + esc(P.target.base) + ')</span></h3><ul class="dots">' + P.target.items.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul><details class="fold"><summary><b>진단 제외 대상</b><span class="fold-n">' + P.target.excluded.length + '개</span><span class="fold-hint">펼쳐 보기</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary><ul class="dots">' + P.target.excluded.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></details></section>';
+    h += '<section class="card"><h3 class="card-h"><span>진단 대상 <span class="muted">(' + esc(P.target.base) + ')</span></span>' + planBtn('target', '진단 대상') + '</h3><ul class="dots">' + P.target.items.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul><details class="fold"><summary><b>진단 제외 대상</b><span class="fold-n">' + P.target.excluded.length + '개</span><span class="fold-hint">펼쳐 보기</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary><ul class="dots">' + P.target.excluded.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></details></section>';
 
-    h += '<section class="card"><h3 style="margin:0 0 8px;display:flex;align-items:center;gap:8px">정량요소 총괄표<button type="button" class="sec-tool" data-quant aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>편람 11쪽 원문</button></h3><p class="muted" style="margin:0 0 6px">정량요소·근거자료·자료기준·공시시기는 편람 11쪽 원문에서 확인하세요.</p><ul class="quant-list">' +
+    h += '<section class="card"><h3 class="card-h">정량요소 총괄표<button type="button" class="sec-tool" data-quant aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>편람 11쪽 원문</button></h3><p class="muted" style="margin:0 0 6px">정량요소·근거자료·자료기준·공시시기는 편람 11쪽 원문에서 확인하세요.</p><ul class="quant-list">' +
       DATA.quantSummary.map(function (q) { return q.indicator; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).map(function (t) {
         var id = t.split(' ')[0], rest = t.slice(id.length).trim();
         return '<li><a href="#/i/' + esc(id) + '"><em>' + esc(id) + '</em><span>' + esc(rest) + '</span></a></li>';
@@ -922,6 +928,17 @@
 
     $app.innerHTML = h;
     var qb = $app.querySelector('[data-quant]'); if (qb) qb.addEventListener('click', openQuant);
+    $app.querySelectorAll('[data-plandoc]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();   // 접기 묶음 제목 안에 있어도 펼쳐지지 않게
+        var d = HB.planPages[btn.getAttribute('data-plandoc')], imgs = [];
+        for (var n = d.from; n <= d.to; n++) {
+          var pad = ('00' + n).slice(-3);
+          imgs.push({ src: HB.docs + 'plan/p' + pad + '.png', alt: '편람 ' + (n - 1) + '쪽', cap: '편람 ' + (n - 1) + '쪽' });
+        }
+        openDoc(btn.getAttribute('data-title'), HB.name + ' · ' + d.label, imgs, HB.docs + d.pdf);
+      });
+    });
   }
 
   /* ---------- changes ---------- */

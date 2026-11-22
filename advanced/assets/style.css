@@ -610,6 +610,10 @@ ul.dots { margin: 0; padding-left: 18px; }
 .quant-list a { display: flex; align-items: baseline; gap: 10px; padding: 9px 2px; text-decoration: none; color: var(--text); font-size: var(--fs-md); font-weight: 600; }
 .quant-list em { flex: none; font-style: normal; font-size: var(--fs-xs); font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; min-width: 52px; }
 .quant-list a:hover span { text-decoration: underline; }
+.card-h { display: flex; align-items: center; gap: var(--sp-2); margin: 0 0 var(--sp-2); }
+.card-h .sec-tool { flex: none; }
+details.fold > summary .sec-tool { margin-left: auto; }
+details.fold > summary .sec-tool + .fold-hint { margin-left: var(--sp-1); }
 /* 접기/펼치기 묶음 (기본 접힘) */
 details.fold { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-2); }
 details.fold > summary { list-style: none; display: flex; align-items: center; gap: var(--sp-2); min-height: var(--touch); padding: var(--sp-2) 14px; cursor: pointer; border-radius: var(--r-lg); }
