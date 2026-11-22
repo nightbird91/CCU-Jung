@@ -147,8 +147,14 @@
     return h || '<p class="empty">해당 유형의 지표가 없습니다.</p>';
   }
 
+  function areaHue(a) {
+    var all = [];
+    DATA.categories.forEach(function (c) { c.fields.forEach(function (f) { f.areas.forEach(function (x) { all.push(x.id); }); }); });
+    return Math.round((all.indexOf(a.id) + 0.5) * 360 / all.length);
+  }
+
   function renderArea(a, items) {
-    var fb = '<details class="area"' + (state.folded ? '' : ' open') + '><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts">' + a.score + '점</span></summary><ul class="ind-list">';
+    var fb = '<details class="area"' + (state.folded ? '' : ' open') + '><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts" style="--h:' + areaHue(a) + '">' + a.score + '<small>점</small></span></summary><ul class="ind-list">';
     items.forEach(function (ind) {
       fb += '<li><a class="ind" href="#/i/' + ind.id + '">' +
         '<span class="iid">' + esc(ind.id) + '</span>' +

@@ -503,7 +503,13 @@ details.area > summary {
 }
 details.area > summary::-webkit-details-marker { display: none; }
 details.area > summary .aid { font-size: var(--fs-xs); color: var(--text-3); font-weight: 700; white-space: nowrap; flex: none; }
-details.area > summary .apts { margin-left: auto; font-size: var(--fs-sm); color: var(--text-2); white-space: nowrap; }
+details.area > summary .apts {
+  margin-left: auto; flex: none; display: inline-flex; align-items: baseline; justify-content: center; gap: 1px;
+  box-sizing: border-box; width: 40px; padding: 2px 0; border-radius: var(--r-pill);
+  font-size: var(--fs-2xs); font-weight: 800; line-height: 1.2; white-space: nowrap; font-variant-numeric: tabular-nums;
+  color: hsl(var(--h, 220) 70% var(--pts-l)); background: hsl(var(--h, 220) 75% var(--pts-bg));
+}
+details.area > summary .apts small { font-size: 9px; font-weight: 700; }
 details.area > summary .caret { transition: transform .2s; color: var(--text-3); flex: none; }
 details.area[open] > summary .caret { transform: rotate(90deg); }
 .ind-list { list-style: none; margin: 0; padding: 0 6px 6px; }
