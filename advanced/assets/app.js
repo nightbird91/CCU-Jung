@@ -893,6 +893,14 @@
     setTitle('운영진단 기본계획', DATA.meta.cycle);
     setTab('plan');
     var h = '';
+    h += '<section class="card fold-card"><details class="fold"><summary><span class="fold-t"><b>기본계획 개요</b><small>기본방향 · 추진 체계 · 추진배경 · 연혁</small></span><span class="fold-hint">펼쳐 보기</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary><div class="fold-body">';
+    h += '<div class="fold-sec"><h4>기본방향</h4><div class="kv">' + P.principles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></div>';
+
+    h += '<div class="fold-sec"><h4>추진 체계</h4><div class="kv">' + P.roles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></div>';
+
+    h += '<div class="fold-sec"><h4>추진배경 및 질 관리체계 변화</h4><ul class="dots">' + P.background.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul></div><div class="fold-sec"><h4>연혁</h4><ul class="timeline">' + P.history.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul></div>';
+    h += '</div></details></section>';
+
     h += '<section class="card"><h3 style="margin:0 0 8px">등급 부여 및 활용</h3><p class="muted" style="margin:0 0 6px">' + esc(P.gradeNote) + '</p>';
     P.grades.forEach(function (g) {
       h += '<div class="grade"><div class="g ' + g.grade + '">' + g.grade + '</div><div><div class="rng">' + esc(g.label) + ' · ' + esc(g.range) + '</div><dl><dt>당해년</dt><dd>' + esc(g.y1) + '</dd><dt>2차년</dt><dd>' + esc(g.y2) + '</dd><dt>3차년</dt><dd>' + esc(g.y3) + '</dd></dl></div></div>';
@@ -912,11 +920,6 @@
         return '<li><a href="#/i/' + esc(id) + '"><em>' + esc(id) + '</em><span>' + esc(rest) + '</span></a></li>';
       }).join('') + '</ul></section>';
 
-    h += '<section class="card"><h3 style="margin:0 0 8px">기본방향</h3><div class="kv">' + P.principles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></section>';
-
-    h += '<section class="card"><h3 style="margin:0 0 8px">추진 체계</h3><div class="kv">' + P.roles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></section>';
-
-    h += '<section class="card"><h3 style="margin:0 0 8px">추진배경 및 질 관리체계 변화</h3><ul class="dots">' + P.background.map(function (c) { return '<li>' + esc(c) + '</li>'; }).join('') + '</ul><h4>연혁</h4><ul class="timeline">' + P.history.map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') + '</ul></section>';
     $app.innerHTML = h;
     var qb = $app.querySelector('[data-quant]'); if (qb) qb.addEventListener('click', openQuant);
   }

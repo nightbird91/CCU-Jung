@@ -622,6 +622,16 @@ details.fold > summary .caret { width: 18px; height: 18px; flex: none; color: va
 details.fold[open] > summary .caret { margin-left: auto; transform: rotate(90deg); }
 details.fold > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 details.fold > ul { padding: 0 14px 12px 32px; }
+.fold-card { padding: 0; overflow: hidden; }
+.fold-card details.fold { margin: 0; border: 0; border-radius: 0; background: transparent; }
+.fold-card details.fold > summary { padding: 14px var(--sp-4); }
+.fold-card details.fold > summary b { font-size: 17px; }
+.fold-body { padding: 0 var(--sp-4) var(--sp-4); }
+.fold-sec + .fold-sec { margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--line); }
+.fold-sec h4 { margin: 0 0 var(--sp-2); font-size: var(--fs-lg); color: var(--primary); }
+.fold-t { display: flex; flex-direction: column; min-width: 0; }
+.fold-t small { font-size: var(--fs-xs); color: var(--text-3); font-weight: 600; }
+details.fold .fold-hint { white-space: nowrap; }
 ul.dots li { margin: var(--sp-1) 0; }
 ul.plain { list-style: none; margin: 0; padding: 0; }
 ul.plain li { padding: 7px 0; border-bottom: 1px solid var(--line); }
