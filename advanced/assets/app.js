@@ -1045,6 +1045,9 @@
       '<div class="settings-row"><span>운영진단 실시</span><b>' + esc(HB.evalYear) + '</b></div>' +
       '<div class="settings-row"><span>진단 주기</span><b>' + esc(HB.cycle) + '</b></div>' +
       '<div class="settings-row"><span>발간</span><b>' + esc(HB.published) + '</b></div>';
+    var $full = document.getElementById('fullOpen');
+    $full.hidden = !HB.fullPdf;
+    if (HB.fullPdf) { $full.href = HB.docs + HB.fullPdf; document.getElementById('fullInfo').textContent = 'PDF' + (HB.fullPages ? ' ' + HB.fullPages + '쪽' : ''); }
   }
   function useHandbook(h) {
     HB = h;

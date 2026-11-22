@@ -9,6 +9,8 @@
     "data": "data/manual.json",
     "docs": "docs/2027/",
     "changesPages": 17,
+    "fullPdf": "handbook.pdf",
+    "fullPages": 60,
     "planPages": {
       "overview": {
         "from": 3,
