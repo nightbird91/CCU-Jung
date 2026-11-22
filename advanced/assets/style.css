@@ -219,6 +219,9 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
   border-radius: var(--r-lg); padding: var(--sp-3) 14px;
   box-shadow: var(--shadow-pop), 0 0 0 100vmax rgba(10,14,20,.38);   /* 바깥을 어둡게 */
 }
+/* 항목이 늘어도 화면 안에서 스크롤 (휴대폰 하단 탭에 가리지 않게) */
+.settings-panel { max-height: calc(100vh - 110px - var(--tabbar-h) - var(--safe-b)); max-height: calc(100dvh - 110px - var(--tabbar-h) - var(--safe-b)); overflow-y: auto; overscroll-behavior: contain; }
+@media (min-width: 1000px) { .settings-panel { max-height: calc(100dvh - 90px); } }
 .settings-org { display: flex; flex-direction: column; gap: 6px; padding-bottom: var(--sp-3); margin-bottom: var(--sp-3); border-bottom: 1px solid var(--pop-line); }
 .settings-org span { font-size: var(--fs-xs); color: var(--text-3); font-weight: 600; }
 .settings-org img { display: block; height: 20px; width: auto; max-width: 100%; align-self: flex-start; background: var(--logo-chip); border-radius: var(--r-xs); padding: var(--logo-pad, 0); box-sizing: content-box; }
@@ -253,6 +256,11 @@ input[type="search"]::-ms-clear { display: none; width: 0; height: 0; }
 .settings-item svg { width: 18px; height: 18px; color: var(--dept); flex: none; }
 .settings-item small { margin-left: auto; font-size: var(--fs-xs); color: var(--text-3); font-weight: 500; }
 .settings-item:hover { border-color: var(--action); }
+.settings-contact { display: flex; flex-direction: column; gap: var(--sp-1); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--pop-line); }
+.settings-contact span { font-size: var(--fs-xs); color: var(--text-3); font-weight: 600; }
+.settings-contact a { display: inline-flex; align-items: center; gap: 6px; align-self: flex-start; min-height: 32px; font-size: var(--fs-base); font-weight: 700; color: var(--action); text-decoration: none; font-variant-numeric: tabular-nums; }
+.settings-contact a svg { width: 16px; height: 16px; flex: none; }
+.settings-contact a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-xs); }
 .settings-maker { display: flex; flex-direction: column; gap: var(--sp-1); margin-top: var(--sp-3); padding-top: var(--sp-3); border-top: 1px solid var(--pop-line); }
 .settings-maker span { font-size: var(--fs-xs); color: var(--text-3); font-weight: 600; }
 .settings-maker b { display: flex; align-items: center; gap: 6px; font-size: var(--fs-md); }
