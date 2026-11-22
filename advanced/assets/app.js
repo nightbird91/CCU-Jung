@@ -5,7 +5,7 @@
   var DATA = null;
   var INDEX = [];        // 평탄화된 지표 목록 (순서 유지)
   var BY_ID = {};
-  var state = { filter: '전체', view: 'tree', query: '' };
+  var state = { filter: '전체', view: 'tree', query: '', folded: true };
 
   var $app = document.getElementById('app');
   var $title = document.getElementById('pageTitle');
@@ -153,8 +153,8 @@
     return Math.round((all.indexOf(a.id) + 0.5) * 360 / all.length);
   }
 
-  function renderArea(a, items) {
-    var fb = '<details class="area"' + (state.folded ? '' : ' open') + '><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts" style="--h:' + areaHue(a) + '">' + a.score + '<small>점</small></span></summary><ul class="ind-list">';
+  function renderArea(a, items, open) {
+    var fb = '<details class="area"' + (open || !state.folded ? ' open' : '') + '><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts" style="--h:' + areaHue(a) + '">' + a.score + '<small>점</small></span></summary><ul class="ind-list">';
     items.forEach(function (ind) {
       fb += '<li><a class="ind" href="#/i/' + ind.id + '">' +
         '<span class="iid">' + esc(ind.id) + '</span>' +
@@ -205,7 +205,7 @@
     h += '<section class="card field-hero c' + c.id + '"><div class="muted">분야 ' + esc(f.id) + ' · ' + f.areas.length + '개 영역 · ' + countInds(f) + '개 지표</div><h2>' + esc(f.name) + '</h2>' +
       '<div class="bar" role="img" aria-label="영역별 배점">' + f.areas.map(function (a, i) { return '<span style="width:' + (a.score / f.score * 100) + '%;opacity:' + (1 - i * 0.3) + '" class="' + (c.id === '1' ? 'c' : 'd') + '"></span>'; }).join('') + '</div>' +
       '<div class="legend">' + f.areas.map(function (a) { return '<span>' + esc(a.id + ' ' + a.name) + ' ' + a.score + '점</span>'; }).join('') + '</div></section>';
-    f.areas.forEach(function (a) { h += '<div class="card" style="padding:4px 10px">' + renderArea(a, a.indicators) + '</div>'; });
+    f.areas.forEach(function (a) { h += '<div class="card" style="padding:4px 10px">' + renderArea(a, a.indicators, true) + '</div>'; });
     var list = allFields(), pos = -1;
     list.forEach(function (x, i) { if (x.f.id === id) pos = i; });
     var prev = list[pos - 1], next = list[pos + 1];
