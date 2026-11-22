@@ -470,10 +470,11 @@ body.side-open .scrim { opacity: 1; pointer-events: auto; }
 .view-toggle { margin-left: auto; }
 .tree-tools { display: flex; justify-content: flex-end; margin: var(--sp-1) 0 var(--sp-2); }
 .fold-all {
-  display: inline-flex; align-items: center; gap: var(--sp-1); min-height: 36px; padding: 0 var(--sp-3);
-  border: 1.5px solid var(--action); border-radius: var(--r-pill); background: var(--action-soft);
-  color: var(--action); font: inherit; font-size: var(--fs-sm); font-weight: 700; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 3px; min-height: 28px; padding: 0 var(--sp-2);
+  border: 1.2px solid var(--action); border-radius: var(--r-pill); background: var(--action-soft);
+  color: var(--action); font: inherit; font-size: 10px; font-weight: 700; cursor: pointer;
 }
+.fold-all svg { width: 12px; height: 12px; }
 .fold-all:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
 /* 지표 체계(구분 › 분야 › 영역 › 지표) */
