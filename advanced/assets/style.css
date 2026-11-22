@@ -605,6 +605,11 @@ tr:last-child td { border-bottom: 0; }
 .sec-tool svg { width: 14px; height: 14px; }
 .sec-tool:hover { border-color: var(--action); background: color-mix(in srgb, var(--action) 18%, var(--surface)); }
 ul.dots { margin: 0; padding-left: 18px; }
+.quant-list { list-style: none; margin: 0; padding: 0; }
+.quant-list li + li { border-top: 1px solid var(--line); }
+.quant-list a { display: flex; align-items: baseline; gap: 10px; padding: 9px 2px; text-decoration: none; color: var(--text); font-size: var(--fs-md); font-weight: 600; }
+.quant-list em { flex: none; font-style: normal; font-size: var(--fs-xs); font-weight: 800; color: var(--primary); font-variant-numeric: tabular-nums; min-width: 52px; }
+.quant-list a:hover span { text-decoration: underline; }
 /* 접기/펼치기 묶음 (기본 접힘) */
 details.fold { margin-top: 14px; border: 1px solid var(--line); border-radius: var(--r-lg); background: var(--surface-2); }
 details.fold > summary { list-style: none; display: flex; align-items: center; gap: var(--sp-2); min-height: var(--touch); padding: var(--sp-2) 14px; cursor: pointer; border-radius: var(--r-lg); }
