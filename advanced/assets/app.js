@@ -88,6 +88,7 @@
     });
     h += '<button class="filter view-toggle" data-view aria-pressed="' + (state.view === 'table') + '">' + (state.view === 'table' ? '카드로 보기' : '총괄표로 보기') + '</button>';
     h += '</div>';
+    if (state.view !== 'table') h += '<div class="tree-tools"><button class="fold-all" data-fold-all type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path class="fa-up" d="M7 9l5-5 5 5M7 15l5 5 5-5"/></svg><span>' + (state.folded ? '모두 펼치기' : '모두 접기') + '</span></button></div>';
 
     h += state.view === 'table' ? renderTable() : renderTree();
     $app.innerHTML = h;
@@ -100,6 +101,21 @@
       try { localStorage.setItem('jsh-view', state.view); } catch (e) {}
       viewHome();
     });
+    var fa = $app.querySelector('[data-fold-all]');
+    if (fa) {
+      var areas = $app.querySelectorAll('details.area');
+      var sync = function () {
+        var anyOpen = Array.prototype.some.call(areas, function (d) { return d.open; });
+        state.folded = !anyOpen;
+        fa.querySelector('span').textContent = anyOpen ? '모두 접기' : '모두 펼치기';
+      };
+      fa.addEventListener('click', function () {
+        var anyOpen = Array.prototype.some.call(areas, function (d) { return d.open; });
+        areas.forEach(function (d) { d.open = !anyOpen; });
+        sync();
+      });
+      areas.forEach(function (d) { d.addEventListener('toggle', sync); });
+    }
   }
 
   function match(ind) { return state.filter === '전체' || ind.type === state.filter; }
@@ -132,7 +148,7 @@
   }
 
   function renderArea(a, items) {
-    var fb = '<details class="area" open><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts">' + a.score + '점</span></summary><ul class="ind-list">';
+    var fb = '<details class="area"' + (state.folded ? '' : ' open') + '><summary>' + caret() + '<span class="aid">' + esc(a.id) + '</span><span>' + esc(a.name) + '</span><span class="apts">' + a.score + '점</span></summary><ul class="ind-list">';
     items.forEach(function (ind) {
       fb += '<li><a class="ind" href="#/i/' + ind.id + '">' +
         '<span class="iid">' + esc(ind.id) + '</span>' +
