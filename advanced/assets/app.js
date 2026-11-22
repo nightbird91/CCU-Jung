@@ -914,7 +914,7 @@
     setTitle('운영진단 기본계획', DATA.meta.cycle);
     setTab('plan');
     var h = '';
-    h += '<section class="card fold-card"><details class="fold"><summary><span class="fold-t"><b>기본계획 개요</b><small>기본방향 · 추진 체계 · 추진배경 · 연혁</small></span>' + planBtn('overview', '기본계획 개요') + '<span class="fold-hint">펼쳐 보기</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary><div class="fold-body">';
+    h += '<section class="card fold-card"><details class="fold"><summary><span class="fold-t"><b>기본계획 개요</b><small>기본방향 · 추진 체계 · 추진배경 · 연혁</small></span><span class="fold-side"><span class="fold-row"><span class="fold-hint">펼쳐 보기</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>' + planBtn('overview', '기본계획 개요') + '</span></summary><div class="fold-body">';
     h += '<div class="fold-sec"><h4>기본방향</h4><div class="kv">' + P.principles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></div>';
 
     h += '<div class="fold-sec"><h4>추진 체계</h4><div class="kv">' + P.roles.map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></div>';
