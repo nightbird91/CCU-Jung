@@ -60,11 +60,12 @@
         <details class="settings-admin" id="adminBox">
           <summary><span>관리자 설정</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary>
           <div class="admin-body">
-            <label class="admin-field"><span>GitHub 토큰 <small>이 기기에만 저장</small></span>
+            <label class="admin-field"><span>GitHub 토큰 <small>이 기기에만 저장</small><em class="tok-state" id="tokState"></em></span>
               <input type="password" id="ghToken" class="lock-input" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
             </label>
             <p class="admin-help">저장소 nightbird91/CCU-Jung 의 Contents 읽기·쓰기 권한만 준 fine-grained 토큰을 넣어 주세요. 토큰이 있어야 비밀번호 변경과 참고자료 추가·삭제를 할 수 있습니다.</p>
             <div class="admin-row"><button type="button" class="lock-btn ghost" id="ghSave">토큰 저장</button><button type="button" class="lock-link" id="ghClear">토큰 지우기</button></div>
+            <p class="tok-msg" id="tokMsg" role="status" aria-live="polite"></p>
             <form class="admin-pw" id="pwForm" autocomplete="off">
               <b id="pwTitle">다운로드 비밀번호 설정</b>
               <label class="admin-field" id="pwOldRow"><span>현재 비밀번호</span><input type="password" id="pwOld" class="lock-input" autocomplete="current-password"></label>

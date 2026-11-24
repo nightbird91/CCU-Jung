@@ -1077,23 +1077,33 @@
   var $tok = document.getElementById('ghToken');
   function syncAdmin() {
     $tok.value = ghToken() ? '••••••••••••' : '';
+    var $ts = document.getElementById('tokState');
+    $ts.textContent = ghToken() ? '저장됨' : '없음'; $ts.classList.toggle('on', !!ghToken());
     var has = REFS && REFS.check;
+    document.getElementById('pwForm').hidden = !ghToken();   // 토큰이 없는 기기에는 비밀번호 변경 칸을 숨김
     document.getElementById('pwOldRow').hidden = !has;
     document.getElementById('pwTitle').textContent = has ? '다운로드 비밀번호 변경' : '다운로드 비밀번호 설정';
   }
+  syncAdmin();
   document.getElementById('adminBox').addEventListener('toggle', function () { if (this.open) loadRefs().then(syncAdmin, syncAdmin); });
   $tok.addEventListener('focus', function () { if (/^•+$/.test($tok.value)) $tok.value = ''; });
+  function tokMsg(t, kind) { var m = document.getElementById('tokMsg'); m.textContent = t || ''; m.className = 'tok-msg' + (kind ? ' ' + kind : ''); if (t && m.scrollIntoView) m.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
   document.getElementById('ghSave').addEventListener('click', function () {
-    var v = $tok.value.replace(/[^\x21-\x7e]/g, '');
-    if (!v || /^•+$/.test(v)) { msg('adminMsg', '토큰을 입력해 주세요.', true); return; }
+    var btn = this, v = $tok.value.replace(/[^\x21-\x7e]/g, '');
+    if (!v) { tokMsg(ghToken() ? '이미 토큰이 저장되어 있습니다. 바꾸려면 새 토큰을 붙여 넣고 다시 누르세요.' : '토큰을 붙여 넣은 뒤 눌러 주세요.', ghToken() ? 'ok' : 'bad'); return; }
     try { localStorage.setItem('jsh-gh-token', v); } catch (e) {}
-    msg('adminMsg', '토큰 확인 중…');
-    gh('GET', 'data/refs.json').then(function () { msg('adminMsg', '토큰을 저장했습니다.'); syncAdmin(); if (location.hash.indexOf('#/refs') === 0) viewRefs(); },
-      function (err) { try { localStorage.removeItem('jsh-gh-token'); } catch (e) {} msg('adminMsg', err.message, true); });
+    btn.disabled = true; btn.textContent = '확인 중…'; tokMsg('GitHub에 토큰을 확인하고 있습니다…');
+    gh('GET', 'data/refs.json').then(function () {
+      syncAdmin(); tokMsg('✓ 토큰이 저장되었습니다. 이 기기에서 관리자 기능을 쓸 수 있습니다.', 'ok');
+      if (location.hash.indexOf('#/refs') === 0) viewRefs();
+    }, function (err) {
+      try { localStorage.removeItem('jsh-gh-token'); } catch (e) {}
+      syncAdmin(); tokMsg('✕ 저장하지 못했습니다. ' + err.message, 'bad');
+    }).then(function () { btn.disabled = false; btn.textContent = '토큰 저장'; });
   });
   document.getElementById('ghClear').addEventListener('click', function () {
     try { localStorage.removeItem('jsh-gh-token'); } catch (e) {}
-    syncAdmin(); msg('adminMsg', '이 기기에서 토큰을 지웠습니다.');
+    syncAdmin(); tokMsg('이 기기에서 토큰을 지웠습니다.', 'ok');
     if (location.hash.indexOf('#/refs') === 0) viewRefs();
   });
   var busy = false;
