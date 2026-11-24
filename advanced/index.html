@@ -57,6 +57,34 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg>
           <span>3주기 변경사항</span><small>원문 17쪽</small>
         </button>
+        <div class="settings-lock" id="lockBox">
+          <span>참고자료 다운로드 권한</span>
+          <div class="lock-state" id="lockState"></div>
+          <form class="lock-form" id="lockForm" autocomplete="off">
+            <input type="password" id="lockPw" class="lock-input" placeholder="다운로드 비밀번호" aria-label="참고자료 다운로드 비밀번호" autocomplete="current-password">
+            <button type="submit" class="lock-btn">확인</button>
+          </form>
+          <button type="button" class="lock-link" id="lockOff" hidden>다시 잠그기</button>
+          <p class="lock-msg" id="lockMsg" role="status" aria-live="polite"></p>
+        </div>
+        <details class="settings-admin" id="adminBox">
+          <summary><span>관리자 설정</span><svg class="caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="admin-body">
+            <label class="admin-field"><span>GitHub 토큰 <small>이 기기에만 저장</small></span>
+              <input type="password" id="ghToken" class="lock-input" placeholder="github_pat_…" autocomplete="off" spellcheck="false">
+            </label>
+            <p class="admin-help">저장소 nightbird91/CCU-Jung 의 Contents 읽기·쓰기 권한만 준 fine-grained 토큰을 넣어 주세요. 토큰이 있어야 비밀번호 변경과 참고자료 추가·삭제를 할 수 있습니다.</p>
+            <div class="admin-row"><button type="button" class="lock-btn ghost" id="ghSave">토큰 저장</button><button type="button" class="lock-link" id="ghClear">토큰 지우기</button></div>
+            <form class="admin-pw" id="pwForm" autocomplete="off">
+              <b id="pwTitle">다운로드 비밀번호 설정</b>
+              <label class="admin-field" id="pwOldRow"><span>현재 비밀번호</span><input type="password" id="pwOld" class="lock-input" autocomplete="current-password"></label>
+              <label class="admin-field"><span>새 비밀번호 <small>6자 이상</small></span><input type="password" id="pwNew" class="lock-input" autocomplete="new-password"></label>
+              <label class="admin-field"><span>새 비밀번호 확인</span><input type="password" id="pwNew2" class="lock-input" autocomplete="new-password"></label>
+              <button type="submit" class="lock-btn">비밀번호 저장</button>
+            </form>
+            <p class="lock-msg" id="adminMsg" role="status" aria-live="polite"></p>
+          </div>
+        </details>
         <div class="settings-contact"><span>담당자 연락처</span><a href="tel:043-230-2122"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg>043-230-2122</a></div>
         <div class="settings-maker"><span>웹페이지</span><b><img id="ccuLogo" src="assets/img/ccu-symbol.png" alt="" width="20" height="20" onerror="this.remove()">충청대학교 교수학습지원실</b></div>
       </div>

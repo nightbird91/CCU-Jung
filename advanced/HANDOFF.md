@@ -130,3 +130,13 @@
 1. `/mnt/project-files/site/`를 수정합니다. 스타일은 해당 구역에 넣고 토큰을 씁니다. 맨 아래에 덧붙이는 방식(덮어쓰기 규칙)은 쓰지 않습니다.
 2. `python3 /mnt/project-files/site-tools/build_artifact.py`로 미리보기용 단일 HTML을 만들어 Claude 미리보기에서 확인합니다.
 3. 확정되면 저장소 `nightbird91/CCU-Jung`의 `advanced/` 폴더에 반영합니다. 루트 `index.html`(통합 웹서비스)은 건드리지 않습니다.
+
+## 참고자료 (#/refs) · 다운로드 비밀번호
+- 목차(사이드바) "변경사항(3주기)" 아래에만 링크. 하단 탭바에는 없음.
+- 파일은 브라우저에서 AES-GCM(256)으로 암호화해 `refs/<id>.bin` 으로 저장. 키는 비밀번호 → PBKDF2-SHA256(250,000회, 16바이트 salt).
+- 목록·암호 확인값: `data/refs.json` = `{ kdf:{salt,iter}, check:{iv,ct}, files:[{id,name,size,type,date,iv,path}] }`. 파일 이름·크기는 공개, 내용만 잠김.
+- 방문자: 설정 → "참고자료 다운로드 권한" 또는 참고자료 화면에서 비밀번호 입력 → 메모리에만 키 보관(새로고침·창 닫으면 다시 잠김).
+- 관리자: 설정 → 관리자 설정에 GitHub fine-grained 토큰(nightbird91/CCU-Jung, Contents 읽기·쓰기)을 저장(그 기기 localStorage `jsh-gh-token`).
+  - 비밀번호 설정·변경: 새 키로 모든 파일을 새 경로에 다시 암호화해 올림 → refs.json 교체 → 옛 파일 삭제 (중간 실패 시 옛 상태 유지).
+  - 자료 추가(한 파일 20MB 이하)·삭제는 참고자료 화면 아래 관리자 영역에서. 모두 GitHub Contents API 로 main 에 직접 커밋, Pages 반영 1~2분.
+- 비밀번호를 잊으면 복구 불가(암호화 특성). 자료를 다시 올려야 함.
