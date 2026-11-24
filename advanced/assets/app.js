@@ -989,7 +989,7 @@
      파일은 AES-GCM 으로 암호화해 refs/*.bin 으로 올리고, 목록은 data/refs.json.
      비밀번호 → PBKDF2(SHA-256) 키. 서버가 없으므로 관리자 작업은 GitHub API(관리자 토큰)로 직접 커밋. */
   var GH_REPO = 'nightbird91/CCU-Jung', GH_BASE = 'advanced/', GH_BRANCH = 'main';
-  var REFS = null, REFKEY = null, REF_OK = 'jsh-refs-ok';
+  var REFS = null, REFKEY = null, REF_OK = 'jsh-refs-ok', refLockOpen = false;
   var enc = new TextEncoder(), dec = new TextDecoder();
   function b64(buf) {
     var b = new Uint8Array(buf), s = '';
@@ -1041,7 +1041,7 @@
     msg('lockMsg', '확인 중…');
     unlock($pw.value).then(function () { $pw.value = ''; msg('lockMsg', ''); }, function (err) { msg('lockMsg', err.message, true); $pw.select(); });
   });
-  document.getElementById('lockOff').addEventListener('click', function () { REFKEY = null; syncLock(); msg('lockMsg', '다시 잠갔습니다.'); });
+  document.getElementById('lockOff').addEventListener('click', function () { REFKEY = null; refLockOpen = false; syncLock(); msg('lockMsg', '다시 잠갔습니다.'); });
 
   /* 관리자: GitHub 토큰 (이 기기 localStorage 에만) */
   function ghToken() { try { return localStorage.getItem('jsh-gh-token') || ''; } catch (e) { return ''; } }
@@ -1167,15 +1167,18 @@
     var admin = !!ghToken(), h = '';
     if (admin) {
       h += '<section class="card ref-admin"><b>관리자 · 자료 추가</b>' +
-        (refs.check ? (REFKEY ? '<p class="muted">파일은 현재 비밀번호로 암호화되어 올라갑니다. 한 파일 20MB까지.</p><label class="ref-pick"><input type="file" multiple data-add><span>파일 선택</span></label>' : '<p class="muted">아래에서 비밀번호를 입력해 잠금을 풀면 자료를 추가할 수 있습니다.</p>')
+        (refs.check ? (REFKEY ? '<p class="muted">파일은 현재 비밀번호로 암호화되어 올라갑니다. 한 파일 20MB까지.</p><label class="ref-pick"><input type="file" multiple data-add><span>파일 선택</span></label>' : '<p class="muted">자료의 \'잠김\'을 눌러 비밀번호를 입력해 잠금을 풀면 자료를 추가할 수 있습니다.</p>')
           : '<p class="muted">설정 → 관리자 설정에서 다운로드 비밀번호를 먼저 정해 주세요.</p>') +
         '<p class="lock-msg" data-admin-msg role="status" aria-live="polite"></p></section>';
     }
-    h += '<section class="card ref-lock' + (REFKEY ? ' on' : '') + '">';
-    if (!refs.check) h += '<b>아직 열 수 없습니다</b><p class="muted">관리자가 다운로드 비밀번호를 설정하면 내려받을 수 있습니다.</p>';
-    else if (REFKEY) h += '<b>다운로드 가능</b><p class="muted">이 창을 닫으면 다시 잠깁니다.</p><button type="button" class="lock-link" data-relock>다시 잠그기</button>';
-    else h += '<b>잠김</b><p class="muted">다운로드 비밀번호를 입력해 주세요. 비밀번호는 담당자에게 문의해 주세요.</p><form class="lock-form" data-unlock autocomplete="off"><input type="password" class="lock-input" placeholder="다운로드 비밀번호" aria-label="다운로드 비밀번호"><button type="submit" class="lock-btn">확인</button></form><p class="lock-msg" role="status" aria-live="polite"></p>';
-    h += '</section>';
+    var showLock = !refs.check || REFKEY || refLockOpen;   // 잠긴 상태의 비밀번호 칸은 평소 숨기고, 자료의 '잠김'을 누르면 표시
+    if (showLock) {
+      h += '<section class="card ref-lock' + (REFKEY ? ' on' : '') + '">';
+      if (!refs.check) h += '<b>아직 열 수 없습니다</b><p class="muted">관리자가 다운로드 비밀번호를 설정하면 내려받을 수 있습니다.</p>';
+      else if (REFKEY) h += '<b>다운로드 가능</b><p class="muted">이 창을 닫으면 다시 잠깁니다.</p><button type="button" class="lock-link" data-relock>다시 잠그기</button>';
+      else h += '<b>잠김</b><p class="muted">다운로드 비밀번호를 입력해 주세요. 비밀번호는 담당자에게 문의해 주세요.</p><form class="lock-form" data-unlock autocomplete="off"><input type="password" class="lock-input" placeholder="다운로드 비밀번호" aria-label="다운로드 비밀번호"><button type="submit" class="lock-btn">확인</button></form><p class="lock-msg" role="status" aria-live="polite"></p>';
+      h += '</section>';
+    }
     h += '<h3 class="section-title">자료 목록 <span class="muted">' + refs.files.length + '개</span></h3>';
     if (!refs.files.length) h += '<p class="empty">등록된 참고자료가 없습니다.</p>';
     else {
@@ -1183,7 +1186,7 @@
       refs.files.forEach(function (f, i) {
         h += '<li class="card ref-item"><svg class="ref-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>' +
           '<div class="ref-t"><b>' + esc(f.name) + '</b><small>' + fmtSize(f.size) + (f.date ? ' · ' + esc(f.date) : '') + '</small></div>' +
-          '<button type="button" class="ref-dl" data-dl="' + i + '"' + (REFKEY ? '' : ' aria-disabled="true"') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (REFKEY ? '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>' : '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</svg>' + (REFKEY ? '받기' : '잠김') + '</button>' +
+          '<button type="button" class="ref-dl' + (REFKEY ? '' : ' locked') + '" data-dl="' + i + '"' + (REFKEY ? '' : ' aria-label="' + esc(f.name) + ' 잠김, 눌러서 비밀번호 입력"') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (REFKEY ? '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>' : '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</svg>' + (REFKEY ? '받기' : '잠김') + '</button>' +
           (admin ? '<button type="button" class="ref-del" data-del="' + i + '" aria-label="' + esc(f.name) + ' 삭제">삭제</button>' : '') + '</li>';
       });
       h += '</ul>';
@@ -1199,10 +1202,15 @@
       unlock(inp.value).catch(function (err) { m.textContent = err.message; m.classList.add('bad'); inp.select(); });
     });
     var rl = $app.querySelector('[data-relock]');
-    if (rl) rl.addEventListener('click', function () { REFKEY = null; syncLock(); });
+    if (rl) rl.addEventListener('click', function () { REFKEY = null; refLockOpen = false; syncLock(); });
     $app.querySelectorAll('[data-dl]').forEach(function (b) {
       b.addEventListener('click', function () {
-        if (!REFKEY) { var i = $app.querySelector('[data-unlock] input'); if (i) { i.focus(); i.scrollIntoView({ block: 'center' }); } return; }
+        if (!REFKEY) {
+          refLockOpen = true; renderRefs(refs);
+          var i = $app.querySelector('[data-unlock] input');
+          if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); }
+          return;
+        }
         var file = refs.files[+b.getAttribute('data-dl')], label = b.innerHTML;
         b.disabled = true; b.textContent = '받는 중…';
         fetch(file.path + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
