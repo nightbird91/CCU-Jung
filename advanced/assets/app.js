@@ -1051,10 +1051,10 @@
     var url = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + GH_BASE + path + (method === 'GET' ? '?ref=' + GH_BRANCH + '&t=' + Date.now() : '');
     return fetch(url, {
       method: method, cache: 'no-store',
-      headers: { Authorization: 'Bearer ' + t, Accept: raw ? 'application/vnd.github.raw' : 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' },
+      headers: { Authorization: 'Bearer ' + t, Accept: raw ? 'application/vnd.github.raw' : 'application/vnd.github+json' },
       body: body ? JSON.stringify(body) : undefined
-    }).catch(function () {
-      throw new Error('GitHub에 연결하지 못했습니다. 실제 사이트(nightbird91.github.io)에서 다시 시도해 주세요.');
+    }).catch(function (e) {
+      throw new Error('GitHub에 연결하지 못했습니다. 실제 사이트(nightbird91.github.io)에서 다시 시도해 주세요. (' + (e && e.message ? e.message : '네트워크 오류') + ')');
     }).then(function (r) {
       if (r.status === 404 && method === 'GET') return null;
       if (r.status === 401 || r.status === 403) throw new Error('GitHub 토큰 권한이 없습니다. 토큰을 확인해 주세요.');
@@ -1084,7 +1084,7 @@
   document.getElementById('adminBox').addEventListener('toggle', function () { if (this.open) loadRefs().then(syncAdmin, syncAdmin); });
   $tok.addEventListener('focus', function () { if (/^•+$/.test($tok.value)) $tok.value = ''; });
   document.getElementById('ghSave').addEventListener('click', function () {
-    var v = $tok.value.trim();
+    var v = $tok.value.replace(/[^\x21-\x7e]/g, '');
     if (!v || /^•+$/.test(v)) { msg('adminMsg', '토큰을 입력해 주세요.', true); return; }
     try { localStorage.setItem('jsh-gh-token', v); } catch (e) {}
     msg('adminMsg', '토큰 확인 중…');
