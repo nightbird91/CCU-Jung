@@ -1155,6 +1155,12 @@
   function renderRefs(refs) {
     if (location.hash.indexOf('#/refs') !== 0) return;
     var admin = !!ghToken(), h = '';
+    if (admin) {
+      h += '<section class="card ref-admin"><b>관리자 · 자료 추가</b>' +
+        (refs.check ? (REFKEY ? '<p class="muted">파일은 현재 비밀번호로 암호화되어 올라갑니다. 한 파일 20MB까지.</p><label class="ref-pick"><input type="file" multiple data-add><span>파일 선택</span></label>' : '<p class="muted">아래에서 비밀번호를 입력해 잠금을 풀면 자료를 추가할 수 있습니다.</p>')
+          : '<p class="muted">설정 → 관리자 설정에서 다운로드 비밀번호를 먼저 정해 주세요.</p>') +
+        '<p class="lock-msg" data-admin-msg role="status" aria-live="polite"></p></section>';
+    }
     h += '<section class="card ref-lock' + (REFKEY ? ' on' : '') + '">';
     if (!refs.check) h += '<b>아직 열 수 없습니다</b><p class="muted">관리자가 다운로드 비밀번호를 설정하면 내려받을 수 있습니다.</p>';
     else if (REFKEY) h += '<b>다운로드 가능</b><p class="muted">이 창을 닫으면 다시 잠깁니다.</p><button type="button" class="lock-link" data-relock>다시 잠그기</button>';
@@ -1171,12 +1177,6 @@
           (admin ? '<button type="button" class="ref-del" data-del="' + i + '" aria-label="' + esc(f.name) + ' 삭제">삭제</button>' : '') + '</li>';
       });
       h += '</ul>';
-    }
-    if (admin) {
-      h += '<section class="card ref-admin"><b>관리자 · 자료 추가</b>' +
-        (refs.check ? (REFKEY ? '<p class="muted">파일은 현재 비밀번호로 암호화되어 올라갑니다. 한 파일 20MB까지.</p><label class="ref-pick"><input type="file" multiple data-add><span>파일 선택</span></label>' : '<p class="muted">위에서 비밀번호를 입력해 잠금을 풀면 자료를 추가할 수 있습니다.</p>')
-          : '<p class="muted">설정 → 관리자 설정에서 다운로드 비밀번호를 먼저 정해 주세요.</p>') +
-        '<p class="lock-msg" data-admin-msg role="status" aria-live="polite"></p></section>';
     }
     $app.innerHTML = h;
 
