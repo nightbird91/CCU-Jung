@@ -1182,9 +1182,10 @@
     h += '<h3 class="section-title">자료 목록 <span class="muted">' + refs.files.length + '개</span></h3>';
     if (!refs.files.length) h += '<p class="empty">등록된 참고자료가 없습니다.</p>';
     else {
-      h += '<ul class="ref-list">';
+      if (admin && refs.files.length > 1) h += '<div class="ref-order" data-order-bar hidden><span>순서가 바뀌었습니다</span><button type="button" class="lock-btn sm" data-order-save>순서 저장</button><button type="button" class="lock-btn ghost sm" data-order-cancel>취소</button></div>';
+      h += '<ul class="ref-list' + (admin ? ' sortable' : '') + '">';
       refs.files.forEach(function (f, i) {
-        h += '<li class="card ref-item"><svg class="ref-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>' +
+        h += '<li class="card ref-item" data-i="' + i + '">' + (admin && refs.files.length > 1 ? '<button type="button" class="ref-grip" data-grip aria-label="' + esc(f.name) + ' 순서 옮기기. 끌어서 옮기거나 위·아래 화살표 키" title="끌어서 순서 바꾸기"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>' : '') + '<svg class="ref-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>' +
           '<div class="ref-t"><b>' + esc(f.name) + '</b><small>' + fmtSize(f.size) + (f.date ? ' · ' + esc(f.date) : '') + '</small></div>' +
           '<button type="button" class="ref-dl' + (REFKEY ? '' : ' locked') + '" data-dl="' + i + '"' + (REFKEY ? '' : ' aria-label="' + esc(f.name) + ' 잠김, 눌러서 비밀번호 입력"') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (REFKEY ? '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>' : '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</svg>' + (REFKEY ? '받기' : '잠김') + '</button>' +
           (admin ? '<button type="button" class="ref-del" data-del="' + i + '" aria-label="' + esc(f.name) + ' 삭제">삭제</button>' : '') + '</li>';
@@ -1249,6 +1250,46 @@
       }).then(function () { renderRefs(REFS); adminMsg(added.length + '개 자료를 올렸습니다. 사이트 반영까지 1~2분 걸립니다.'); },
         function (err) { adminMsg(err.message || '올리지 못했습니다.', true); });
     });
+    // 관리자: 손잡이를 끌어 자료 순서 바꾸기 (마우스·터치 공통 pointer 이벤트, 키보드는 위/아래 화살표)
+    var $list = $app.querySelector('.ref-list.sortable'), $bar = $app.querySelector('[data-order-bar]');
+    function curOrder() { return Array.prototype.map.call($list.children, function (li) { return +li.getAttribute('data-i'); }); }
+    function orderChanged() { var o = curOrder(); $bar.hidden = o.every(function (v, k) { return v === k; }); }
+    if ($list && $bar) {
+      $list.querySelectorAll('[data-grip]').forEach(function (g) {
+        var li = g.closest('li');
+        g.addEventListener('pointerdown', function (e) {
+          if (e.button) return;
+          e.preventDefault(); li.classList.add('dragging');   // 항목을 옮기면 포인터 캡처가 풀리므로 document 에서 받는다
+          function move(ev) {
+            var y = ev.clientY, sib = Array.prototype.filter.call($list.children, function (x) { return x !== li; });
+            var before = null;
+            for (var k = 0; k < sib.length; k++) { var r = sib[k].getBoundingClientRect(); if (y < r.top + r.height / 2) { before = sib[k]; break; } }
+            if (before !== li.nextElementSibling || (!before && li !== $list.lastElementChild)) $list.insertBefore(li, before);
+            if (y < 60) window.scrollBy(0, -12); else if (y > window.innerHeight - 60) window.scrollBy(0, 12);
+          }
+          function up() { li.classList.remove('dragging'); document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); orderChanged(); }
+          document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+        });
+        g.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowUp' && li.previousElementSibling) $list.insertBefore(li, li.previousElementSibling);
+          else if (e.key === 'ArrowDown' && li.nextElementSibling) $list.insertBefore(li.nextElementSibling, li);
+          else return;
+          e.preventDefault(); g.focus(); orderChanged();
+        });
+      });
+      $bar.querySelector('[data-order-cancel]').addEventListener('click', function () { renderRefs(refs); });
+      $bar.querySelector('[data-order-save]').addEventListener('click', function () {
+        var btn = this, paths = curOrder().map(function (k) { return refs.files[k].path; });
+        btn.disabled = true; adminMsg('순서를 저장하는 중…');
+        ghRefs().then(function (latest) {
+          var rank = {}; paths.forEach(function (p, k) { rank[p] = k; });
+          // 그사이 다른 기기에서 추가된 자료는 맨 뒤에 그대로 둔다
+          latest.files.sort(function (a, b) { return (a.path in rank ? rank[a.path] : 1e9) - (b.path in rank ? rank[b.path] : 1e9); });
+          return saveRefs(latest, '참고자료 순서 변경');
+        }).then(function () { renderRefs(REFS); adminMsg('순서를 저장했습니다. 사이트 반영까지 1~2분 걸립니다.'); },
+          function (err) { btn.disabled = false; adminMsg(err.message || '순서를 저장하지 못했습니다.', true); });
+      });
+    }
     $app.querySelectorAll('[data-del]').forEach(function (b) {
       b.addEventListener('click', function () {
         var file = refs.files[+b.getAttribute('data-del')];

@@ -950,6 +950,16 @@ ul.plain li:last-child { border-bottom: 0; }
 .ref-pick { align-self: flex-start; position: relative; }
 .ref-pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .ref-pick span { display: inline-flex; align-items: center; min-height: 40px; padding: 0 var(--sp-4); border-radius: var(--r-md); background: var(--action); color: var(--action-ink); font-weight: 700; font-size: var(--fs-md); }
+.ref-grip { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 40px; margin-left: calc(var(--sp-2) * -1); padding: 0; border: 0; border-radius: var(--r-md); background: transparent; color: var(--text-3); cursor: grab; touch-action: none; }
+.ref-grip svg { width: 18px; height: 18px; }
+.ref-grip:hover { color: var(--text-2); background: var(--line); }
+.ref-grip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.ref-item.dragging { position: relative; z-index: 2; box-shadow: 0 8px 24px rgba(0,0,0,.18); outline: 2px solid var(--action); opacity: .95; }
+.ref-item.dragging .ref-grip { cursor: grabbing; color: var(--action); }
+.ref-order { display: flex; align-items: center; gap: var(--sp-2); margin: 0 var(--sp-1) var(--sp-3); padding: var(--sp-2) var(--sp-3); border: 1.5px solid var(--action); border-radius: var(--r-md); background: var(--action-soft); }
+.ref-order span { flex: 1; font-size: var(--fs-sm); font-weight: 700; color: var(--action); }
+.ref-order .lock-btn { flex: none; padding: 0 var(--sp-3); }
+.ref-order[hidden] { display: none; }
 .ref-pick input:focus-visible + span { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 @media (prefers-reduced-motion: reduce) {
