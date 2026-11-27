@@ -146,9 +146,9 @@
   function ourRenew() { return OUR.kind === 'post' ? OUR.year - 3 : OUR.year; }   /* 기준이 되는 평가인증 심사 연도 */
   function ourKindName() { return OUR.kind === 'post' ? '사후점검평가' : '갱신평가'; }
   /* 심사대상 기간: 갱신(평가인증 심사)은 직전 2개 학년도, 사후점검평가는 직전 3개 학년도 */
-  function ourPeriod() {
-    var y = OUR.year;
-    return OUR.kind === 'post' ? (y - 3) + '~' + (y - 1) + '학년도 (회계 ' + (y - 4) + '~' + (y - 2) + ')' : (y - 2) + '~' + (y - 1) + '학년도 (회계 ' + (y - 3) + '~' + (y - 2) + ')';
+  function ourPeriod(br) {
+    var y = OUR.year, p = OUR.kind === 'post' ? [y - 3, y - 1, y - 4, y - 2] : [y - 2, y - 1, y - 3, y - 2];
+    return p[0] + '~' + p[1] + '학년도' + (br ? '<br>' : ' ') + '(' + p[2] + '~' + p[3] + ' 회계년도)';
   }
   function cycleSteps(y) {
     return [
@@ -1314,7 +1314,7 @@
     document.getElementById('hbInfo').innerHTML =
       '<div class="settings-row"><span>주기</span><b>' + esc(DATA.meta.cycle) + '</b></div>' +
       '<div class="settings-row"><span>발간</span><b>' + esc(DATA.meta.published) + '</b></div>' +
-      '<div class="settings-row"><span>우리 대학 심사대상 기간 · ' + OUR.year + ' ' + ourKindName() + '</span><b>' + ourPeriod() + '</b></div>';
+      '<div class="settings-row"><span>우리 대학 심사대상 기간 · ' + OUR.year + ' ' + ourKindName() + '</span><b>' + ourPeriod(true) + '</b></div>';
     var ks = document.getElementById('ourKind'), ys = document.getElementById('ourYear'), opts = '';
     for (var yy = 2026; yy <= 2040; yy++) opts += '<option value="' + yy + '"' + (yy === OUR.year ? ' selected' : '') + '>' + yy + '년</option>';
     ys.innerHTML = opts; ks.value = OUR.kind;
