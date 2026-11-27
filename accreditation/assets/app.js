@@ -140,7 +140,16 @@
   }
 
   /* ---------- 우리 대학 평가주기 ---------- */
-  var OUR_RENEW = 2028; /* 우리 대학 갱신평가(평가인증 심사) 연도 */
+  /* 우리 대학 평가: 설정에서 고른 평가 종류(갱신평가/사후점검평가)와 평가연도 (localStorage acc-our) */
+  var OUR = { kind: 'renew', year: 2028 };
+  try { var o = JSON.parse(localStorage.getItem('acc-our') || 'null'); if (o && (o.kind === 'renew' || o.kind === 'post') && o.year > 2000) OUR = o; } catch (e) {}
+  function ourRenew() { return OUR.kind === 'post' ? OUR.year - 3 : OUR.year; }   /* 기준이 되는 평가인증 심사 연도 */
+  function ourKindName() { return OUR.kind === 'post' ? '사후점검평가' : '갱신평가'; }
+  /* 심사대상 기간: 갱신(평가인증 심사)은 직전 2개 학년도, 사후점검평가는 직전 3개 학년도 */
+  function ourPeriod() {
+    var y = OUR.year;
+    return OUR.kind === 'post' ? (y - 3) + '~' + (y - 1) + '학년도 (회계 ' + (y - 4) + '~' + (y - 2) + ')' : (y - 2) + '~' + (y - 1) + '학년도 (회계 ' + (y - 3) + '~' + (y - 2) + ')';
+  }
   function cycleSteps(y) {
     return [
       { y: (y - 1) + '.8~9', t: '평가인증 신청', d: '설명회 후 신청·접수' },
@@ -152,18 +161,18 @@
   }
   var CYCLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>';
   function cycleCard(full) {
-    var y = OUR_RENEW, folded = cycleFolded();
+    var y = ourRenew(), now = OUR.kind === 'post' ? 3 : 1, folded = cycleFolded();
     var h = '<section class="card sec cycle' + (folded ? ' folded' : '') + '"><h3><button type="button" class="cycle-tg" aria-expanded="' + (folded ? 'false' : 'true') + '" aria-controls="cycleBody' + (full ? 'F' : 'H') + '">우리 대학 평가주기' + caret() + '</button><button type="button" class="sec-tool" data-slides="35" aria-haspopup="dialog">' + CYCLE_ICON + '설명회 35쪽</button></h3>';
-    h += '<p class="cycle-sum muted">' + y + ' 갱신평가 · ' + (y + 3) + ' 사후점검평가 · ' + (y + 5) + ' 다음 갱신평가</p>';
+    h += '<p class="cycle-sum muted">' + (OUR.kind === 'post' ? (y + 3) + ' 사후점검평가 · ' + (y + 5) + ' 다음 갱신평가' : y + ' 갱신평가 · ' + (y + 3) + ' 사후점검평가 · ' + (y + 5) + ' 다음 갱신평가') + ' · 심사대상 ' + ourPeriod() + '</p>';
     h += '<div class="cycle-body" id="cycleBody' + (full ? 'F' : 'H') + '"' + (folded ? ' hidden' : '') + '>';
-    h += '<ol class="cycle-steps">' + cycleSteps(y).map(function (s, i) { return '<li' + (i === 1 ? ' class="now"' : '') + '><b>' + esc(s.y) + '</b><span>' + esc(s.t) + '</span><small>' + esc(s.d) + '</small></li>'; }).join('') + '</ol>';
+    h += '<ol class="cycle-steps">' + cycleSteps(y).map(function (s, i) { return '<li' + (i === now ? ' class="now"' : '') + '><b>' + esc(s.y) + '</b><span>' + esc(s.t) + '</span><small>' + esc(s.d) + '</small></li>'; }).join('') + '</ol>';
     if (full) {
       h += '<div class="table-wrap"><table><thead><tr><th>구분</th><th>시기</th><th>심사대상 기간</th><th>점검 범위</th></tr></thead><tbody>' +
         '<tr><td>갱신평가(평가인증 심사)</td><td>' + y + '년 4월 서면·현장평가 (신청 ' + (y - 1) + '년 8~9월)</td><td>' + (y - 2) + '~' + (y - 1) + '학년도, ' + (y - 3) + '~' + (y - 2) + '회계연도</td><td>판단항목 201개 전체</td></tr>' +
         '<tr><td>사후점검평가</td><td>' + (y + 3) + '년 (인증 3년차)</td><td>' + y + '~' + (y + 2) + '학년도, ' + (y - 1) + '~' + (y + 1) + '회계연도</td><td>판단항목 102개(약 50%, ‘사후’ 표시)</td></tr>' +
         '<tr><td>다음 갱신평가</td><td>' + (y + 5) + '년</td><td>' + (y + 3) + '~' + (y + 4) + '학년도</td><td>그해 편람 기준</td></tr></tbody></table></div>' +
         '<ul class="dots" style="margin-top:10px;font-size:var(--fs-md);color:var(--text-2)"><li>인증을 받으면 인증기간은 5년이고, 3년차에 사후점검평가(인증 유지 여부), 5년차에 다음 평가인증 심사를 받습니다.</li><li>사후점검평가에서 ‘불만족’이거나 미참여하면 인증이 철회됩니다.</li><li>조건부인증·인증유예는 차년도 보완평가를 거쳐 인증기간이 4년이 됩니다.</li></ul>' +
-        '<div class="callout">※ 시기는 설명회 35쪽 예시(2027 심사 → 2030 사후점검 → 2032 심사)를 우리 대학 갱신연도 ' + y + '년에 맞춰 계산한 것입니다. ' + y + '년 심사에는 ' + y + '년 편람이 적용되므로, 이 페이지(' + Y + ' 편람)와 기준이 다를 수 있습니다.</div>';
+        '<div class="callout">※ 시기는 설명회 35쪽 예시(2027 심사 → 2030 사후점검 → 2032 심사)를 우리 대학 ' + ourKindName() + ' ' + OUR.year + '년(설정에서 변경)에 맞춰 계산한 것입니다. ' + OUR.year + '년 평가에는 ' + OUR.year + '년 편람이 적용되므로, 이 페이지(' + Y + ' 편람)와 기준이 다를 수 있습니다.</div>';
     } else {
       h += '<p class="muted" style="margin:8px 0 0">인증 5년 · 3년차 사후점검평가 · <a href="#/guide">자세히 보기</a></p>';
     }
@@ -978,7 +987,8 @@
       throw new Error('GitHub에 연결하지 못했습니다. 실제 사이트(nightbird91.github.io)에서 다시 시도해 주세요. (' + (e && e.message ? e.message : '네트워크 오류') + ')');
     }).then(function (r) {
       if (r.status === 404 && method === 'GET') return null;
-      if (r.status === 401 || r.status === 403) throw new Error('GitHub 토큰 권한이 없습니다. 토큰을 확인해 주세요.');
+      if (r.status === 401) throw new Error('GitHub가 이 토큰을 받아들이지 않았습니다. 토큰이 잘못 복사되었거나 만료·삭제되었을 수 있습니다. 새로 만들어 붙여 넣어 주세요.');
+      if (r.status === 403) throw new Error('GitHub 토큰 권한이 없습니다. 토큰 설정에서 저장소 CCU-Jung 를 고르고 Contents 를 Read and write 로 주었는지 확인해 주세요.');
       if (!r.ok) throw new Error('GitHub 오류 (' + r.status + ')');
       return raw ? r.arrayBuffer() : r.json();
     });
@@ -1013,8 +1023,19 @@
     var btn = this, v = $tok.value.replace(/[^\x21-\x7e]/g, '');
     if (!v) { tokMsg(ghToken() ? '이미 토큰이 저장되어 있습니다. 바꾸려면 새 토큰을 붙여 넣고 다시 누르세요.' : '토큰을 붙여 넣은 뒤 눌러 주세요.', ghToken() ? 'ok' : 'bad'); return; }
     try { localStorage.setItem('jsh-gh-token', v); } catch (e) {}
+    if (ghToken() !== v) { tokMsg('✕ 이 브라우저에서는 토큰을 저장할 수 없습니다(사생활 보호 모드나 미리보기 화면). 실제 사이트 https://nightbird91.github.io/CCU-Jung/accreditation/ 를 일반 창으로 열어 다시 저장해 주세요.', 'bad'); return; }
     btn.disabled = true; btn.textContent = '확인 중…'; tokMsg('GitHub에 토큰을 확인하고 있습니다…');
-    gh('GET', 'data/refs.json').then(function () {
+    /* 저장소 쓰기 권한까지 확인: 토큰으로 저장소 정보를 읽어 permissions.push 를 봄 */
+    fetch('https://api.github.com/repos/' + GH_REPO, { cache: 'no-store', headers: { Authorization: 'Bearer ' + v, Accept: 'application/vnd.github+json' } }).catch(function (e) {
+      throw new Error('GitHub에 연결하지 못했습니다. 실제 사이트(nightbird91.github.io)에서 다시 시도해 주세요. (' + (e && e.message ? e.message : '네트워크 오류') + ')');
+    }).then(function (r) {
+      if (r.status === 401) throw new Error('GitHub가 이 토큰을 받아들이지 않았습니다. 토큰이 잘못 복사되었거나 만료·삭제되었을 수 있습니다. 새로 만들어 붙여 넣어 주세요.');
+      if (!r.ok) throw new Error('GitHub 오류 (' + r.status + ')');
+      return r.json();
+    }).then(function (repo) {
+      if (!repo.permissions || !repo.permissions.push) throw new Error('토큰은 맞지만 저장소에 쓸 권한이 없습니다. 토큰 설정의 Repository access 에서 ‘Only select repositories → CCU-Jung’을 고르고, Permissions 의 Contents 를 ‘Read and write’로 바꿔 주세요.');
+      return gh('GET', 'data/refs.json');
+    }).then(function () {
       syncAdmin(); tokMsg('✓ 토큰이 저장되었습니다. 이 기기에서 관리자 기능을 쓸 수 있습니다.', 'ok');
       if (location.hash.indexOf('#/refs') === 0) viewRefs();
     }, function (err) {
@@ -1291,10 +1312,12 @@
     var $sel = document.getElementById('hbSelect');
     $sel.innerHTML = HBS.map(function (h) { return '<option value="' + esc(h.id) + '"' + (h === HB ? ' selected' : '') + '>' + esc(h.name) + '</option>'; }).join('');
     document.getElementById('hbInfo').innerHTML =
-      '<div class="settings-row"><span>평가연도</span><b>' + Y + '</b></div>' +
       '<div class="settings-row"><span>주기</span><b>' + esc(DATA.meta.cycle) + '</b></div>' +
-      '<div class="settings-row"><span>심사대상 기간</span><b>' + (Y - 2) + '~' + (Y - 1) + '학년도 (회계 ' + (Y - 3) + '~' + (Y - 2) + ')</b></div>' +
-      '<div class="settings-row"><span>발간</span><b>' + esc(DATA.meta.published) + '</b></div>';
+      '<div class="settings-row"><span>발간</span><b>' + esc(DATA.meta.published) + '</b></div>' +
+      '<div class="settings-row"><span>우리 대학 심사대상 기간 · ' + OUR.year + ' ' + ourKindName() + '</span><b>' + ourPeriod() + '</b></div>';
+    var ks = document.getElementById('ourKind'), ys = document.getElementById('ourYear'), opts = '';
+    for (var yy = 2026; yy <= 2040; yy++) opts += '<option value="' + yy + '"' + (yy === OUR.year ? ' selected' : '') + '>' + yy + '년</option>';
+    ys.innerHTML = opts; ks.value = OUR.kind;
   }
   function useHandbook(h) {
     return Promise.all([loadJSON(h.data), h.qa ? loadJSON(h.qa).catch(function () { return null; }) : Promise.resolve(null)]).then(function (r) {
@@ -1314,6 +1337,13 @@
       route();
     });
   }
+  function setOur() {
+    OUR = { kind: document.getElementById('ourKind').value, year: parseInt(document.getElementById('ourYear').value, 10) };
+    try { localStorage.setItem('acc-our', JSON.stringify(OUR)); } catch (e) {}
+    renderHbInfo(); route();
+  }
+  document.getElementById('ourKind').addEventListener('change', setOur);
+  document.getElementById('ourYear').addEventListener('change', setOur);
   document.getElementById('hbSelect').addEventListener('change', function (e) {
     var h = HBS.filter(function (x) { return x.id === e.target.value; })[0];
     if (h && h !== HB) { showLoading(h.name + '을(를) 불러오는 중입니다'); useHandbook(h).catch(fail); }

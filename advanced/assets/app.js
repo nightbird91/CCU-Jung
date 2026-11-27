@@ -1057,7 +1057,8 @@
       throw new Error('GitHub에 연결하지 못했습니다. 실제 사이트(nightbird91.github.io)에서 다시 시도해 주세요. (' + (e && e.message ? e.message : '네트워크 오류') + ')');
     }).then(function (r) {
       if (r.status === 404 && method === 'GET') return null;
-      if (r.status === 401 || r.status === 403) throw new Error('GitHub 토큰 권한이 없습니다. 토큰을 확인해 주세요.');
+      if (r.status === 401) throw new Error('GitHub가 이 토큰을 받아들이지 않았습니다. 토큰이 잘못 복사되었거나 만료·삭제되었을 수 있습니다. 새로 만들어 붙여 넣어 주세요.');
+      if (r.status === 403) throw new Error('GitHub 토큰 권한이 없습니다. 토큰 설정에서 저장소 CCU-Jung 를 고르고 Contents 를 Read and write 로 주었는지 확인해 주세요.');
       if (!r.ok) throw new Error('GitHub 오류 (' + r.status + ')');
       return raw ? r.arrayBuffer() : r.json();
     });
@@ -1092,8 +1093,19 @@
     var btn = this, v = $tok.value.replace(/[^\x21-\x7e]/g, '');
     if (!v) { tokMsg(ghToken() ? '이미 토큰이 저장되어 있습니다. 바꾸려면 새 토큰을 붙여 넣고 다시 누르세요.' : '토큰을 붙여 넣은 뒤 눌러 주세요.', ghToken() ? 'ok' : 'bad'); return; }
     try { localStorage.setItem('jsh-gh-token', v); } catch (e) {}
+    if (ghToken() !== v) { tokMsg('✕ 이 브라우저에서는 토큰을 저장할 수 없습니다(사생활 보호 모드나 미리보기 화면). 실제 사이트 https://nightbird91.github.io/CCU-Jung/advanced/ 를 일반 창으로 열어 다시 저장해 주세요.', 'bad'); return; }
     btn.disabled = true; btn.textContent = '확인 중…'; tokMsg('GitHub에 토큰을 확인하고 있습니다…');
-    gh('GET', 'data/refs.json').then(function () {
+    /* 저장소 쓰기 권한까지 확인: 토큰으로 저장소 정보를 읽어 permissions.push 를 봄 */
+    fetch('https://api.github.com/repos/' + GH_REPO, { cache: 'no-store', headers: { Authorization: 'Bearer ' + v, Accept: 'application/vnd.github+json' } }).catch(function (e) {
+      throw new Error('GitHub에 연결하지 못했습니다. 실제 사이트(nightbird91.github.io)에서 다시 시도해 주세요. (' + (e && e.message ? e.message : '네트워크 오류') + ')');
+    }).then(function (r) {
+      if (r.status === 401) throw new Error('GitHub가 이 토큰을 받아들이지 않았습니다. 토큰이 잘못 복사되었거나 만료·삭제되었을 수 있습니다. 새로 만들어 붙여 넣어 주세요.');
+      if (!r.ok) throw new Error('GitHub 오류 (' + r.status + ')');
+      return r.json();
+    }).then(function (repo) {
+      if (!repo.permissions || !repo.permissions.push) throw new Error('토큰은 맞지만 저장소에 쓸 권한이 없습니다. 토큰 설정의 Repository access 에서 ‘Only select repositories → CCU-Jung’을 고르고, Permissions 의 Contents 를 ‘Read and write’로 바꿔 주세요.');
+      return gh('GET', 'data/refs.json');
+    }).then(function () {
       syncAdmin(); tokMsg('✓ 토큰이 저장되었습니다. 이 기기에서 관리자 기능을 쓸 수 있습니다.', 'ok');
       if (location.hash.indexOf('#/refs') === 0) viewRefs();
     }, function (err) {

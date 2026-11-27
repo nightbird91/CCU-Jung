@@ -966,3 +966,10 @@ ul.plain li:last-child { border-bottom: 0; }
   * { transition: none !important; scroll-behavior: auto !important; }
   .spinner { animation-duration: 2.4s; }
 }
+
+/* 관리자 설정: GitHub 토큰 만들기 바로가기 (권한·기간을 미리 채운 GitHub 페이지를 새 창으로) */
+.admin-link { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: 6px; min-height: var(--touch); font-size: var(--fs-sm); font-weight: 600; color: var(--action); text-decoration: none; }
+.admin-link svg { width: 16px; height: 16px; flex: none; }
+.admin-link small { flex-basis: 100%; padding-left: 22px; font-size: var(--fs-xs); font-weight: 400; color: var(--text-3); }
+.admin-link:hover { text-decoration: underline; }
+.admin-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-xs); }
