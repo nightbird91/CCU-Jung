@@ -1,0 +1,77 @@
+/* =====================================================================
+   기관평가인증 편람 — 추가 스타일 (최소)
+   기본 스타일은 전공심화 편람과 같은 assets/style.css 를 그대로 쓰고,
+   기관평가인증에만 있는 요소(판단항목 a·b·c, 판정 P·CP·F, 유의사항 단계)만 여기에 둡니다.
+   ===================================================================== */
+
+/* 발행 기관 이름(로고 대신 글자) */
+.settings-org .org-name { font-size: var(--fs-md); align-self: center; }
+
+/* 판단항목: 진단요소 목록(.el-list)과 같은 모양, 번호만 a) b) c) */
+.el-list.abc .el-item::before { content: counter(el, lower-alpha); }
+
+/* 판정 칩 */
+.chip.P { background: var(--dept-soft); color: var(--dept); }
+.chip.CP { background: var(--quant-soft); color: var(--quant); }
+.chip.F { background: color-mix(in srgb, var(--minus) 14%, var(--surface)); color: var(--minus); }
+.chip.PI { background: var(--dept-soft); color: var(--dept); box-shadow: inset 0 0 0 1px var(--dept); }
+
+/* 주요 확인 및 유의사항: ㅇ → - → ※ 단계 */
+ul.dots ul.dots { margin-top: 2px; list-style: "– "; }
+ul.dots li.note { list-style: none; margin-left: -2px; font-size: var(--fs-sm); color: var(--text-3); }
+.callout > b { display: block; color: var(--text); margin-bottom: 2px; }
+.callout ul.dots { margin-top: 2px; }
+.sec .table-wrap { margin-top: 10px; }
+.sec .table-wrap + .muted { display: block; margin-top: 6px; }
+
+/* 판정 연습: 판단항목별 충족/미흡 고르기 */
+.judge-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: var(--fs-md); }
+.judge-row:last-of-type { border-bottom: 0; }
+.judge-row > span { flex: 1; min-width: 160px; }
+.judge-row .filters { padding: 0; flex: none; }
+.judge-row .filter { min-height: 36px; }
+
+/* 하단 탭 5개(백문백답 추가) */
+.tabbar-inner { grid-template-columns: repeat(5, 1fr); }
+
+/* 백문백답: 질문을 누르면 답변이 펼쳐짐 (details.fold 와 같은 모양) */
+details.fold.qa > summary { align-items: flex-start; }
+details.fold.qa > summary .chip { flex: none; margin-top: 1px; }
+details.fold.qa > summary .qa-q { flex: 1; min-width: 0; font-weight: 700; font-size: var(--fs-md); line-height: 1.5; }
+details.fold.qa > summary .caret { margin-top: 2px; }
+details.fold.qa[open] > summary .caret { margin-left: 0; }
+.qa-body { padding: 0 14px 12px; font-size: var(--fs-md); }
+.qa-body ul.dots { margin: 0; }
+.qa-foot { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); }
+.qa-foot .muted { font-size: var(--fs-xs); }
+.qa-foot .sec-tool { margin-left: auto; }
+a.chip { text-decoration: none; }
+@media (max-width: 599px) {
+  details.fold.qa > summary { display: grid; grid-template-columns: 1fr auto; grid-template-areas: "id caret" "q q"; row-gap: 4px; }
+  details.fold.qa > summary .chip { grid-area: id; justify-self: start; }
+  details.fold.qa > summary .caret { grid-area: caret; }
+  details.fold.qa > summary .qa-q { grid-area: q; }
+}
+
+/* 평가영역 5개 색: 1 파랑(college) · 2 초록(dept)은 style.css 그대로, 3~5는 같은 규칙을 다른 기존 색 토큰으로 */
+.c1 { --ac: var(--college); --ac-soft: var(--college-soft); }
+.c2 { --ac: var(--dept); --ac-soft: var(--dept-soft); }
+.c3 { --ac: var(--qual); --ac-soft: var(--qual-soft); }
+.c4 { --ac: var(--quant); --ac-soft: var(--quant-soft); }
+.c5 { --ac: var(--mixed); --ac-soft: var(--mixed-soft); }
+.acc-bar span { background: var(--ac); }
+.acc-bar span + span { box-shadow: inset 2px 0 0 var(--surface); }
+.legend > span[class^="c"] i { background: var(--ac); }
+.t1.c3 .t1-link i, .t1.c4 .t1-link i, .t1.c5 .t1-link i { background: var(--ac-soft); color: var(--ac); }
+.t1.c3 > ul, .t1.c4 > ul, .t1.c5 > ul { border-left-color: color-mix(in srgb, var(--ac) 35%, var(--line)); }
+.t1.c3 .t2-link.on, .t1.c4 .t2-link.on, .t1.c5 .t2-link.on { color: var(--ac); }
+.t1.c3 .t4-link em, .t1.c4 .t4-link em, .t1.c5 .t4-link em { background: var(--ac-soft); color: var(--ac); }
+.t1.c3 .t4-link:hover, .t1.c4 .t4-link:hover, .t1.c5 .t4-link:hover { border-color: var(--ac); }
+.t1.c3 .t4-link.on, .t1.c4 .t4-link.on, .t1.c5 .t4-link.on { background: var(--ac); border-color: var(--ac); }
+.t1.c3 .t4-link.on em, .t1.c4 .t4-link.on em, .t1.c5 .t4-link.on em { background: color-mix(in srgb, var(--on-ink) 22%, transparent); color: var(--on-ink); }
+.t1.c3 .t4-link.on .tp, .t1.c4 .t4-link.on .tp, .t1.c5 .t4-link.on .tp { color: var(--on-ink); opacity: .85; }
+.cat.c3 .cat-badge, .cat.c4 .cat-badge, .cat.c5 .cat-badge { background: var(--ac-soft); color: var(--ac); }
+.field-hero.c3, .field-hero.c4, .field-hero.c5 { border-top: 4px solid var(--ac); }
+
+/* 요약 카드 제목이 휴대폰에서 줄바꿈되지 않게 */
+.summary .total b { white-space: nowrap; }
