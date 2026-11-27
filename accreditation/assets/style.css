@@ -813,6 +813,12 @@ ul.plain li:last-child { border-bottom: 0; }
 .search-box svg { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; color: var(--text-3); }
 .search-box .clear { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); }
 .suggest { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin: var(--sp-3) 0; }
+/* 검색 결과 안내 줄: 자판 검색(엔터) 뒤 화면이 이 줄로 옮겨짐 */
+.search-sum { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--sp-2); margin: var(--sp-2) 4px var(--sp-3); font-size: var(--fs-md); color: var(--text-2); scroll-margin-top: var(--sp-3); }
+.search-sum b { color: var(--text); font-weight: 700; }
+.search-sum .ss-sub { font-size: var(--fs-sm); color: var(--text-3); }
+.search-sum.none { margin-bottom: 0; }
+#results { scroll-margin-top: var(--sp-3); }
 .result { display: block; text-decoration: none; color: inherit; }
 .result .where { font-size: var(--fs-xs); color: var(--text-3); margin-top: 6px; }
 .result .snip { font-size: var(--fs-md); color: var(--text-2); margin-top: var(--sp-1); }

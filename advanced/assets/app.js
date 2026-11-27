@@ -881,6 +881,17 @@
       renderResults(v);
     };
     $q.addEventListener('input', run);
+    // 휴대폰 자판의 검색(엔터): 자판을 닫고 결과 안내 줄로 화면을 옮김
+    $q.addEventListener('keydown', function (e) {
+      if (e.key !== 'Enter' && e.keyCode !== 13) return;
+      e.preventDefault();
+      run();
+      $q.blur();
+      setTimeout(function () {
+        var t = document.getElementById('results');
+        if (t && $q.value.trim()) t.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }, 300);
+    });
     document.getElementById('qc').addEventListener('click', function () { $q.value = ''; run(); $q.focus(); });
     $app.querySelectorAll('[data-s]').forEach(function (b) { b.addEventListener('click', function () { $q.value = b.getAttribute('data-s'); run(); }); });
     renderResults(state.query);
@@ -899,9 +910,9 @@
         groups[d.ind.id].push(d);
       }
     });
-    if (!order.length) { $r.innerHTML = '<p class="empty">"' + esc(q) + '"에 대한 결과가 없습니다.</p>'; return; }
+    if (!order.length) { $r.innerHTML = '<p class="search-sum none" role="status"><span><b>\'' + esc(q) + '\'</b> 검색 결과가 없습니다.</span></p><p class="empty">다른 검색어를 입력하거나 위 추천어를 눌러 보세요.</p>'; return; }
     var total = order.reduce(function (n, id) { return n + groups[id].length; }, 0);
-    var h = '<p class="muted" style="margin:4px 4px 10px">' + order.length + '개 지표에서 ' + total + '건</p>';
+    var h = '<p class="search-sum" role="status"><span><b>\'' + esc(q) + '\'</b> 검색 결과 <b>' + total + '건</b></span><span class="ss-sub">' + order.length + '개 지표</span></p>';
     order.forEach(function (id) {
       var ind = BY_ID[id], hits = groups[id];
       h += '<a class="card result" href="#/i/' + id + '"><div style="display:flex;gap:8px;align-items:center"><span class="chip score">' + esc(id) + '</span><b style="flex:1">' + highlight(ind.name, q) + '</b>' + typeChip(ind.type) + '</div>';
