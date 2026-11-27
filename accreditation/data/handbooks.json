@@ -9,6 +9,8 @@
     "qaYear": 2026,
     "qaDocs": "docs/2026/qa/",
     "fullPdf": "handbook.pdf",
-    "fullPages": 458
+    "fullPages": 458,
+    "pages": "pages/",
+    "pageOffset": 4
   }
 ]

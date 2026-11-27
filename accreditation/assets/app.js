@@ -219,7 +219,7 @@
     if (!c) { viewHome(); return; }
     setTitle(c.id + ' ' + c.name); setTab('home');
     var h = '<div class="crumbs">' + crumbArea(c._area) + '<span>' + esc(c.id + ' ' + c.name) + '</span></div>';
-    h += '<section class="card field-hero ' + areaCls(c._area) + '"><div class="muted">평가준거 ' + esc(c.id) + ' · ' + c.elements.length + '개 평가요소 · 편람 ' + c.page + '쪽</div><h2>' + esc(c.name) + '</h2><p style="margin:8px 0 0;color:var(--text-2)">' + esc(c.desc) + '</p></section>';
+    h += '<section class="card field-hero ' + areaCls(c._area) + '"><div class="muted">평가준거 ' + esc(c.id) + ' · ' + c.elements.length + '개 평가요소</div><h2>' + esc(c.name) + '</h2><p style="margin:8px 0 0;color:var(--text-2)">' + esc(c.desc) + '</p>' + (HB.pages ? '<div class="hbp-row">' + hbBtn(c.page + '~' + Math.max(c.page, c.elements[0].page - 1), c.id + ' 편람 원문') + '</div>' : '<p class="muted" style="margin:6px 0 0">편람 ' + c.page + '쪽</p>') + '</section>';
     h += '<div class="card" style="padding:4px 10px">' + renderCrit(c, c.elements, true) + '</div>';
     h += '<p class="muted" style="margin:4px 4px 12px">평가준거 판정(평가요소 3개 결과로 P·CP·F)은 모든 준거에 같으므로 <a href="#/judge">판정 기준</a> 화면에 모아 두었습니다.</p>';
     var pos = ALLCRIT.indexOf(c), prev = ALLCRIT[pos - 1], next = ALLCRIT[pos + 1];
@@ -337,14 +337,47 @@
     resetZoom();
     document.getElementById('docBody').scrollTop = 0; document.getElementById('docBody').scrollLeft = 0;
     $doc.hidden = false; document.body.classList.add('modal-open');
-    $doc.querySelector('.modal-close').focus();
+    $doc.querySelector('.modal-close:not(#docMax)').focus();
+  }
+  /* ---------- 편람 원문 쪽 팝업 ---------- */
+  function pgRange(r) { var m = String(r).split(/[~\-–]/).map(function (x) { return parseInt(x, 10); }); return [m[0], m[1] && m[1] >= m[0] ? m[1] : m[0]]; }
+  function hbBtn(r, title, cls) {
+    var g = pgRange(r), lbl = '편람 ' + g[0] + (g[1] > g[0] ? '~' + g[1] : '') + '쪽';
+    if (!HB || !HB.pages) return '<span class="muted">' + lbl + '</span>';
+    return '<button type="button" class="sec-tool hbp' + (cls ? ' ' + cls : '') + '" data-hbp="' + g[0] + '-' + g[1] + '"' + (title ? ' data-hbt="' + esc(title) + '"' : '') + ' aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>' + lbl + '</button>';
+  }
+  function openHbPages(title, from, to, lead) {
+    var imgs = [], off = HB.pageOffset || 0;
+    to = Math.min(to, from + 9);
+    for (var n = from; n <= to; n++) imgs.push({ src: img(HB.docs + HB.pages + 'p' + n + '.png'), alt: '편람 ' + n + '쪽 원문', cap: '편람 ' + n + '쪽' });
+    openDoc(title || '편람 원문', DATA.meta.title + ' · ' + from + (to > from ? '~' + to : '') + '쪽', imgs, HB.fullPdf ? HB.docs + HB.fullPdf + '#page=' + (from + off) : '', lead);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-hbp]'); if (!b) return;
+    e.preventDefault(); e.stopPropagation();
+    var g = b.getAttribute('data-hbp').split('-').map(Number);
+    openHbPages(b.getAttribute('data-hbt') || '편람 원문', g[0], g[1]);
+  });
+  function elemEnd(e) {
+    var i = INDEX.indexOf(e), nx = INDEX[i + 1];
+    if (!nx) return e.page + 1;
+    var stop = nx._crit !== e._crit ? nx._crit.page : nx.page;
+    return Math.max(e.page, Math.min(stop - 1, e.page + 3));
   }
   function openSlides(title, sub, nums, lead) {
     openDoc(title, sub, nums.map(function (n) {
       return { src: slideSrc(n), alt: '설명회 자료 ' + n + '쪽: ' + slideTitle(n), cap: '설명회 자료 ' + n + '쪽 · ' + slideTitle(n) };
     }), '', lead);
   }
-  $doc.addEventListener('click', function (e) { if (e.target === $doc || e.target.closest('.modal-close')) closeDoc(); });
+  var $docMax = document.getElementById('docMax');
+  function setDocMax(on) {
+    $doc.classList.toggle('max', on); $docMax.setAttribute('aria-pressed', on ? 'true' : 'false');
+    var t = on ? '창 원래 크기로' : '창 크게 보기'; $docMax.setAttribute('aria-label', t); $docMax.title = t;
+    try { localStorage.setItem('acc-docmax', on ? '1' : '0'); } catch (e) {}
+  }
+  try { if (localStorage.getItem('acc-docmax') === '1') setDocMax(true); } catch (e) {}
+  $docMax.addEventListener('click', function (e) { e.stopPropagation(); setDocMax(!$doc.classList.contains('max')); });
+  $doc.addEventListener('click', function (e) { if (e.target === $doc || (e.target.closest('.modal-close') && !e.target.closest('#docMax'))) closeDoc(); });
   /* 팝업 확대·축소 (두 손가락 핀치, 두 번 탭, ± 버튼, PC는 Ctrl+휠) */
   function makeZoomable(scroller, ctl, base, apply, topOf) {
     var ZMIN = 1, ZMAX = 4, z = 1, out = ctl.querySelector('output');
@@ -535,7 +568,7 @@
     h += '<section class="card detail-head"><div class="iid">평가요소 ' + esc(e.id) + '</div><h2>' + esc(e.q) + '</h2><div class="chips">' + typeChip(e.type) +
       (pk.length ? '<span class="chip">사후점검 ' + pk.join('·') + '</span>' : '') + (e.quant && e.quant.tags.indexOf('사후') >= 0 ? '<span class="chip">사후점검</span>' : '') +
       (e.quant && e.quant.tags.indexOf('모니터링') >= 0 ? '<span class="chip">사후 모니터링</span>' : '') +
-      (br ? '<span class="chip score">' + Y + ' ' + esc(br.kind) + '</span>' : '') + '<span class="chip">편람 ' + e.page + '쪽</span></div></section>';
+      (br ? '<span class="chip score">' + Y + ' ' + esc(br.kind) + '</span>' : '') + '</div>' + (HB.pages ? '<div class="hbp-row">' + hbBtn(e.page + '~' + elemEnd(e), e.id + ' 편람 원문') + '<span class="muted">원문 쪽을 팝업으로 봅니다</span></div>' : '<span class="chip">편람 ' + e.page + '쪽</span>') + '</section>';
 
     var body = '';
     function sec(key, title, html, tool) { secs.push([key, title]); body += '<section class="card sec" id="s-' + key + '"><h3>' + esc(title) + (tool || '') + '</h3>' + html + '</section>'; }
@@ -576,7 +609,7 @@
 
     // 4. 작성양식
     if (forms.length) {
-      sec('fm', '작성양식', '<p class="muted" style="margin-top:-4px">항목을 누르면 작성 내용 안내가 팝업으로 열립니다. 표 원문은 편람 쪽수를 확인하세요.</p>' +
+      sec('fm', '작성양식', '<p class="muted" style="margin-top:-4px">항목을 누르면 작성 안내와 편람의 표 원문 쪽이 팝업으로 열립니다.</p>' +
         forms.map(function (f, fi) {
           return '<button type="button" class="form form-btn" data-form="' + fi + '" aria-haspopup="dialog"><span class="lbl 표">표</span><span class="ttl">' + esc(f.title) + '<small>편람 ' + esc(f.page) + '쪽</small></span>' +
             '<svg class="pdf-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg></button>';
@@ -637,7 +670,9 @@
     $app.querySelectorAll('[data-form]').forEach(function (b) {
       b.addEventListener('click', function () {
         var f = forms[+b.getAttribute('data-form')];
-        openInfo('작성양식', e.id + ' ' + short(e), '<p style="margin:0 0 6px"><b>' + esc(f.title) + '</b></p>' + (f.desc ? '<p style="margin:0">' + esc(f.desc) + '</p>' : '') + '<div class="callout">※ 표 원문은 편람 ' + esc(f.page) + '쪽에 있습니다.</div>');
+        var lead = '<p style="margin:0 0 6px"><b>' + esc(f.title) + '</b></p>' + (f.desc ? '<p style="margin:0">' + esc(f.desc) + '</p>' : '');
+        if (HB.pages) { var g = pgRange(f.page); openHbPages('작성양식 · ' + e.id, g[0], g[1], lead); return; }
+        openInfo('작성양식', e.id + ' ' + short(e), lead + '<div class="callout">※ 표 원문은 편람 ' + esc(f.page) + '쪽에 있습니다.</div>');
       });
     });
     $app.querySelectorAll('[data-br]').forEach(function (b) {
@@ -886,7 +921,7 @@
           (st.n === 6 ? '<p class="muted" style="margin:8px 0 0">우리 대학 심사대상 기간은 <a href="#/guide">평가 안내 · 일정</a>에서 확인하세요.</p>' : '') +
           (st.n === 12 ? '<p class="muted" style="margin:8px 0 0"><a href="#/judge">판정 기준 자세히 보기</a></p>' : '') +
           (st.todo ? '<div class="callout proc-todo"><b>우리 대학 할 일</b> ' + esc(st.todo) + '</div>' : '') +
-          '<div class="proc-foot"><span class="muted">편람 ' + esc(st.page) + '쪽</span>' + slideTool(st.slides) + '</div></div></details>';
+          '<div class="proc-foot">' + hbBtn(st.page, st.n + '단계 ' + st.name) + slideTool(st.slides) + '</div></div></details>';
       });
       h += '</section>';
     });
@@ -903,8 +938,8 @@
     setTitle('평가 안내 · 일정'); setTab('guide');
     var h = DATA.process ? '<a class="card proc-link" href="#/process"><b>평가인증 절차 15단계</b><span>신청부터 후속조치까지 단계별 요점과 우리 대학이 할 일</span>' + caret() + '</a>' : '';
     h += '<section class="card fold-card"><details class="fold" open><summary><span class="fold-t"><b>편람 읽는 법</b><small>기준 체계 · 일러두기</small></span><span class="fold-side"><span class="fold-row"><span class="fold-hint">펼쳐 보기</span>' + caret() + '</span></span></summary><div class="fold-body">';
-    h += '<div class="fold-sec"><h4>기준 체계</h4><ul class="dots"><li>평가영역 5개 → 평가준거 30개 → 평가요소 90개 → 판단항목 201개(a, b, c …)</li><li>사후점검평가는 판단항목 102개(약 50%)로, 운영실적·평가 및 환류 개선실적·정량지표 중심입니다. 이 페이지에서는 ‘사후’로 표시합니다.</li><li>평가자는 판단항목을 중심으로 입증자료와 실제 운영 현황을 종합 검토해 평가요소의 충족 여부를 판단합니다.</li></ul><p class="muted" style="margin:6px 0 0">편람 81~83쪽 · 설명회 자료 41~42쪽</p></div>';
-    h += '<div class="fold-sec"><h4>일러두기</h4><ul class="dots">' + DATA.notice.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul><p class="muted" style="margin:6px 0 0">편람 105쪽</p></div>';
+    h += '<div class="fold-sec"><h4>기준 체계</h4><ul class="dots"><li>평가영역 5개 → 평가준거 30개 → 평가요소 90개 → 판단항목 201개(a, b, c …)</li><li>사후점검평가는 판단항목 102개(약 50%)로, 운영실적·평가 및 환류 개선실적·정량지표 중심입니다. 이 페이지에서는 ‘사후’로 표시합니다.</li><li>평가자는 판단항목을 중심으로 입증자료와 실제 운영 현황을 종합 검토해 평가요소의 충족 여부를 판단합니다.</li></ul><p class="muted hbp-line">' + hbBtn('81~83', '기준 체계') + ' 설명회 자료 41~42쪽</p></div>';
+    h += '<div class="fold-sec"><h4>일러두기</h4><ul class="dots">' + DATA.notice.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul><p class="muted hbp-line">' + hbBtn('105', '일러두기') + '</p></div>';
     h += '</div></details></section>';
 
     h += cycleCard(true);
