@@ -4,7 +4,7 @@
 (function () {
   'use strict';
 
-  var DATA = null, AREAS = [], QA = null, QA_BY_EL = {};
+  var HBS = [], HB = null, Y = 2027, DATA = null, AREAS = [], QA = null, QA_BY_EL = {};
   var INDEX = [];        // 평탄화된 평가요소 목록 (순서 유지)
   var BY_ID = {}, CRIT = {};
   var state = { filter: '전체', query: '', folded: true };
@@ -28,7 +28,7 @@
     return m[s] ? '<span class="chip ' + m[s] + '">' + esc(s) + '</span>' : esc(s);
   }
   function setTitle(main) {
-    document.title = main ? main + ' · 2027 전문대학 기관평가인증 편람' : '2027 전문대학 기관평가인증 편람';
+    var t = Y + ' 전문대학 기관평가인증 편람'; document.title = main ? main + ' · ' + t : t;
   }
   function setTab(name) {
     document.querySelectorAll('.tabbar a').forEach(function (a) {
@@ -40,7 +40,8 @@
   function postKeys(e) { return e.items.filter(function (x) { return x.tags.indexOf('사후') >= 0; }).map(function (x) { return x.k; }); }
   function isPost(e) { return postKeys(e).length > 0 || !!(e.quant && e.quant.tags.indexOf('사후') >= 0); }
   function img(p) { return (window.IMG_DATA && window.IMG_DATA[p]) || p; }
-  function slideSrc(n) { return img('docs/2027/briefing/s' + n + '.jpg'); }
+  function slideSrc(n) { return img(HB.docs + 'briefing/s' + n + '.jpg'); }
+  function CHG() { return Y + ' 변경'; }
   function slideTitle(n) { return DATA.slideTitles[n] || ''; }
 
   /* ---------- data ---------- */
@@ -65,21 +66,20 @@
 
   /* ---------- views: 평가체계 ---------- */
   function match(e) {
-    return state.filter === '전체' || e.type === state.filter || (state.filter === '사후점검' && isPost(e)) || (state.filter === '2027 변경' && DATA.brief[e.id]);
+    return state.filter === '전체' || e.type === state.filter || (state.filter === '사후점검' && isPost(e)) || (state.filter === CHG() && DATA.brief[e.id]);
   }
   var ALLCRIT = [];
   function critHue(c) { return Math.round((ALLCRIT.indexOf(c) + 0.5) * 360 / ALLCRIT.length); }
   function areaCls(a) { return 'c' + a._n; }
   function crumbArea(a) { return '<span><a href="#/a/' + a.id + '">' + esc(a.id + '. ' + a.name) + '</a></span>'; }
   function renderCrit(c, items, open) {
-    var h = '<details class="area"' + (open || !state.folded || state.filter !== '전체' ? ' open' : '') + '><summary>' + caret() + '<span class="aid">' + esc(c.id) + '</span><span>' + esc(c.name) + '</span><span class="apts" style="--h:' + critHue(c) + '">' + c.elements.length + '<small>요소</small></span></summary><ul class="ind-list">';
+    var h = '<details class="area"' + (open || !state.folded || state.filter !== '전체' ? ' open' : '') + '><summary>' + caret() + '<span class="aid">' + esc(c.id) + '</span><span>' + esc(c.name) + '</span></summary><ul class="ind-list">';
     items.forEach(function (e) {
       var pk = postKeys(e);
       h += '<li><a class="ind" href="#/e/' + e.id + '">' +
         '<span class="iid">' + esc(e.id) + '</span>' +
         '<span class="iname">' + esc(e.q) + '</span>' +
-        '<span class="ichips">' + typeChip(e.type) + (isPost(e) ? '<span class="chip">사후점검' + (pk.length ? ' ' + pk.join('·') : '') + '</span>' : '') + (DATA.brief[e.id] ? '<span class="chip score">2027 ' + esc(DATA.brief[e.id].kind) + '</span>' : '') + '</span>' +
-        '<span class="ipts" style="--h:' + Math.round(INDEX.indexOf(e) * 360 / INDEX.length) + '">' + (e.type === '정량' ? '정량' : e.items.length + '<small>항목</small>') + '</span>' +
+        '<span class="ichips">' + typeChip(e.type) + (isPost(e) ? '<span class="chip">사후점검' + (pk.length ? ' ' + pk.join('·') : '') + '</span>' : '') + (DATA.brief[e.id] ? '<span class="chip score">' + Y + ' ' + esc(DATA.brief[e.id].kind) + '</span>' : '') + '</span>' +
         '</a></li>';
     });
     return h + '</ul></details>';
@@ -87,7 +87,7 @@
 
   function viewHome() {
     setTitle(''); setTab('home');
-    var types = ['전체', '정성', '정량', '사후점검', '2027 변경'];
+    var types = ['전체', '정성', '정량', '사후점검', CHG()];
     var counts = {};
     types.forEach(function (t) { counts[t] = 0; });
     INDEX.forEach(function (e) { types.forEach(function (t) { var f = state.filter; state.filter = t; if (match(e)) counts[t]++; state.filter = f; }); });
@@ -98,6 +98,7 @@
       '<div class="bar acc-bar" role="img" aria-label="평가영역별 평가요소 수">' + AREAS.map(function (a) { var n = a.criteria.reduce(function (s, c) { return s + c.elements.length; }, 0); return '<span class="' + areaCls(a) + '" style="width:' + (n * 100 / INDEX.length) + '%"></span>'; }).join('') + '</div>' +
       '<div class="legend">' + AREAS.map(function (a) { return '<span class="' + areaCls(a) + '"><i></i>' + esc(a.id + '. ' + a.name) + '</span>'; }).join('') + '</div>' +
       '</section>';
+    h += cycleCard(false);
 
     h += '<div class="filters" role="group" aria-label="유형 필터">';
     types.forEach(function (t) {
@@ -118,7 +119,7 @@
         '<div class="field">' + body + '</div></section>';
     });
     if (h.indexOf('class="card cat') < 0) h += '<p class="empty">해당 유형의 평가요소가 없습니다.</p>';
-    $app.innerHTML = h;
+    $app.innerHTML = h; bindSlides($app);
 
     $app.querySelectorAll('[data-filter]').forEach(function (b) {
       b.addEventListener('click', function () { state.filter = b.getAttribute('data-filter'); viewHome(); });
@@ -136,6 +137,53 @@
       sync();
     });
     areas.forEach(function (d) { d.addEventListener('toggle', sync); });
+  }
+
+  /* ---------- 우리 대학 평가주기 ---------- */
+  var OUR_RENEW = 2028; /* 우리 대학 갱신평가(평가인증 심사) 연도 */
+  function cycleSteps(y) {
+    return [
+      { y: (y - 1) + '.8~9', t: '평가인증 신청', d: '설명회 후 신청·접수' },
+      { y: String(y), t: '갱신평가', d: '평가인증 심사 · 자료 ' + (y - 2) + '~' + (y - 1) + '학년도' },
+      { y: (y + 1) + '~' + (y + 5), t: '인증기간 5년', d: '인증 판정 시' },
+      { y: String(y + 3), t: '사후점검평가', d: '인증 3년차 · 자료 ' + y + '~' + (y + 2) + '학년도' },
+      { y: String(y + 5), t: '다음 갱신평가', d: '다음 평가인증 심사' }
+    ];
+  }
+  var CYCLE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>';
+  function cycleCard(full) {
+    var y = OUR_RENEW, folded = cycleFolded();
+    var h = '<section class="card sec cycle' + (folded ? ' folded' : '') + '"><h3><button type="button" class="cycle-tg" aria-expanded="' + (folded ? 'false' : 'true') + '" aria-controls="cycleBody' + (full ? 'F' : 'H') + '">우리 대학 평가주기' + caret() + '</button><button type="button" class="sec-tool" data-slides="35" aria-haspopup="dialog">' + CYCLE_ICON + '설명회 35쪽</button></h3>';
+    h += '<p class="cycle-sum muted">' + y + ' 갱신평가 · ' + (y + 3) + ' 사후점검평가 · ' + (y + 5) + ' 다음 갱신평가</p>';
+    h += '<div class="cycle-body" id="cycleBody' + (full ? 'F' : 'H') + '"' + (folded ? ' hidden' : '') + '>';
+    h += '<ol class="cycle-steps">' + cycleSteps(y).map(function (s, i) { return '<li' + (i === 1 ? ' class="now"' : '') + '><b>' + esc(s.y) + '</b><span>' + esc(s.t) + '</span><small>' + esc(s.d) + '</small></li>'; }).join('') + '</ol>';
+    if (full) {
+      h += '<div class="table-wrap"><table><thead><tr><th>구분</th><th>시기</th><th>심사대상 기간</th><th>점검 범위</th></tr></thead><tbody>' +
+        '<tr><td>갱신평가(평가인증 심사)</td><td>' + y + '년 4월 서면·현장평가 (신청 ' + (y - 1) + '년 8~9월)</td><td>' + (y - 2) + '~' + (y - 1) + '학년도, ' + (y - 3) + '~' + (y - 2) + '회계연도</td><td>판단항목 201개 전체</td></tr>' +
+        '<tr><td>사후점검평가</td><td>' + (y + 3) + '년 (인증 3년차)</td><td>' + y + '~' + (y + 2) + '학년도, ' + (y - 1) + '~' + (y + 1) + '회계연도</td><td>판단항목 102개(약 50%, ‘사후’ 표시)</td></tr>' +
+        '<tr><td>다음 갱신평가</td><td>' + (y + 5) + '년</td><td>' + (y + 3) + '~' + (y + 4) + '학년도</td><td>그해 편람 기준</td></tr></tbody></table></div>' +
+        '<ul class="dots" style="margin-top:10px;font-size:var(--fs-md);color:var(--text-2)"><li>인증을 받으면 인증기간은 5년이고, 3년차에 사후점검평가(인증 유지 여부), 5년차에 다음 평가인증 심사를 받습니다.</li><li>사후점검평가에서 ‘불만족’이거나 미참여하면 인증이 철회됩니다.</li><li>조건부인증·인증유예는 차년도 보완평가를 거쳐 인증기간이 4년이 됩니다.</li></ul>' +
+        '<div class="callout">※ 시기는 설명회 35쪽 예시(2027 심사 → 2030 사후점검 → 2032 심사)를 우리 대학 갱신연도 ' + y + '년에 맞춰 계산한 것입니다. ' + y + '년 심사에는 ' + y + '년 편람이 적용되므로, 이 페이지(' + Y + ' 편람)와 기준이 다를 수 있습니다.</div>';
+    } else {
+      h += '<p class="muted" style="margin:8px 0 0">인증 5년 · 3년차 사후점검평가 · <a href="#/guide">자세히 보기</a></p>';
+    }
+    return h + '</div></section>';
+  }
+  /* 평가주기 카드 숨기기·펼치기 (localStorage acc-cycle-fold) */
+  function cycleFolded() { try { return localStorage.getItem('acc-cycle-fold') === '1'; } catch (e) { return false; } }
+  function bindSlides(root) {
+    root.querySelectorAll('.cycle-tg').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var sec = b.closest('.cycle'), open = b.getAttribute('aria-expanded') !== 'true';
+        b.setAttribute('aria-expanded', open ? 'true' : 'false');
+        sec.classList.toggle('folded', !open);
+        sec.querySelector('.cycle-body').hidden = !open;
+        try { localStorage.setItem('acc-cycle-fold', open ? '0' : '1'); } catch (e) {}
+      });
+    });
+    root.querySelectorAll('.cycle [data-slides]').forEach(function (b) {
+      b.addEventListener('click', function () { openSlides(b.textContent.trim(), DATA.meta.briefing, b.getAttribute('data-slides').split(',').map(Number)); });
+    });
   }
 
   /* ---------- 평가영역 화면 ---------- */
@@ -162,7 +210,7 @@
     var h = '<div class="crumbs">' + crumbArea(c._area) + '<span>' + esc(c.id + ' ' + c.name) + '</span></div>';
     h += '<section class="card field-hero ' + areaCls(c._area) + '"><div class="muted">평가준거 ' + esc(c.id) + ' · ' + c.elements.length + '개 평가요소 · 편람 ' + c.page + '쪽</div><h2>' + esc(c.name) + '</h2><p style="margin:8px 0 0;color:var(--text-2)">' + esc(c.desc) + '</p></section>';
     h += '<div class="card" style="padding:4px 10px">' + renderCrit(c, c.elements, true) + '</div>';
-    h += '<section class="card sec"><h3>평가준거 판정기준</h3>' + critJudgeTable() + '</section>';
+    h += '<p class="muted" style="margin:4px 4px 12px">평가준거 판정(평가요소 3개 결과로 P·CP·F)은 모든 준거에 같으므로 <a href="#/judge">판정 기준</a> 화면에 모아 두었습니다.</p>';
     var pos = ALLCRIT.indexOf(c), prev = ALLCRIT[pos - 1], next = ALLCRIT[pos + 1];
     h += '<div class="pager">' +
       (prev ? '<a href="#/c/' + prev.id + '"><small>‹ 이전 준거</small>' + esc(prev.id + ' ' + prev.name) + '</a>' : '<span class="ghost"></span>') +
@@ -195,7 +243,7 @@
       var ne = a.criteria.reduce(function (s, c) { return s + c.elements.length; }, 0);
       h += '<li class="t1 ' + areaCls(a) + '" data-node="a' + a.id + '"><button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button><a class="t1-link" href="#/a/' + a.id + '" data-key="a' + a.id + '"><i>' + esc(a.id) + '</i><span class="tn">' + esc(a.name) + '</span><span class="tp">' + ne + '요소</span></a><ul>';
       a.criteria.forEach(function (c) {
-        h += '<li class="t2" data-node="' + c.id + '"><button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button><a class="t2-link" href="#/c/' + c.id + '" data-key="c' + c.id + '"><em>' + esc(c.id) + '</em><span class="tn">' + esc(c.name) + '</span><span class="tp">' + c.elements.length + '</span></a><ul>';
+        h += '<li class="t2" data-node="' + c.id + '"><button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button><a class="t2-link" href="#/c/' + c.id + '" data-key="c' + c.id + '"><em>' + esc(c.id) + '</em><span class="tn">' + esc(c.name) + '</span></a><ul>';
         c.elements.forEach(function (e) {
           h += '<li class="t4"><a class="t4-link" href="#/e/' + e.id + '" data-key="e' + e.id + '"><em>' + esc(e.id) + '</em><span class="tn">' + esc(short(e)) + '</span><span class="tp">' + (e.type === '정량' ? '정량' : '') + '</span></a></li>';
         });
@@ -207,7 +255,7 @@
     h += '</nav><div class="side-extra">' +
       '<a class="side-link" href="#/guide" data-key="guide"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><b>평가 안내 · 일정</b></a>' +
       '<a class="side-link" href="#/judge" data-key="judge"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/></svg><b>판정 기준</b></a>' +
-      '<a class="side-link" href="#/changes" data-key="changes"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg><b>2027 주요 변경</b></a>' +
+      '<a class="side-link" href="#/changes" data-key="changes"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg><b>' + Y + ' 주요 변경</b></a>' +
       '<a class="side-link" href="#/qa" data-key="qa"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5M12 16.5h.01"/></svg><b>백문백답</b></a>' +
       '<a class="side-link" href="#/refs" data-key="refs"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><rect x="9" y="12" width="6" height="5" rx="1"/><path d="M10.5 12v-1a1.5 1.5 0 0 1 3 0v1"/></svg><b>참고자료</b></a>' +
       '<a class="side-link" href="#/search" data-key="search"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><b>검색</b></a></div>';
@@ -401,7 +449,12 @@
   }
 
   /* ---------- 백문백답 (2026 컨설팅 자료집) ---------- */
-  var QA_NOTE = '2026년 심사(자료범위 2024~2025학년도) 기준 답변입니다. 2027년 심사는 자료범위가 2025~2026학년도로 1년씩 늦춰지고, 2027 편람에서 바뀐 기준이 있으면 편람이 우선합니다.';
+  var QA_NOTE = '';
+  function makeQaNote() {
+    var q = HB.qaYear || Y;
+    QA_NOTE = q + '년 심사(자료범위 ' + (q - 2) + '~' + (q - 1) + '학년도) 기준 답변입니다.' +
+      (q < Y ? ' ' + Y + '년 심사는 자료범위가 ' + (Y - 2) + '~' + (Y - 1) + '학년도로 ' + (Y - q) + '년씩 늦춰지고, ' + Y + ' 편람에서 바뀐 기준이 있으면 편람이 우선합니다.' : '');
+  }
   function qaAnswer(a) {
     var h = '', open1 = false, open2 = false, ex = [];
     function flushEx() { if (ex.length) { closeAll(); h += '<div class="callout"><b>작성 예시</b>' + ex.map(function (x) { return '<div>' + esc(x) + '</div>'; }).join('') + '</div>'; ex = []; } }
@@ -429,7 +482,7 @@
     root.querySelectorAll('[data-qa-page]').forEach(function (b) {
       b.addEventListener('click', function () {
         var q = QA.items.filter(function (x) { return x.id === b.getAttribute('data-qa-page'); })[0];
-        openDoc(q.id + ' 원문', QA.meta.short + ' ' + q.page + '쪽', [{ src: img('docs/2026/qa/p' + (q.pdf < 10 ? '0' : '') + q.pdf + '.jpg'), alt: QA.meta.title + ' ' + q.page + '쪽', cap: QA.meta.title + ' ' + q.page + '쪽 (' + QA.meta.published + ')' }], '');
+        openDoc(q.id + ' 원문', QA.meta.short + ' ' + q.page + '쪽', [{ src: img((HB.qaDocs || 'docs/qa/') + 'p' + (q.pdf < 10 ? '0' : '') + q.pdf + '.jpg'), alt: QA.meta.title + ' ' + q.page + '쪽', cap: QA.meta.title + ' ' + q.page + '쪽 (' + QA.meta.published + ')' }], '');
       });
     });
   }
@@ -470,7 +523,7 @@
     h += '<section class="card detail-head"><div class="iid">평가요소 ' + esc(e.id) + '</div><h2>' + esc(e.q) + '</h2><div class="chips">' + typeChip(e.type) +
       (pk.length ? '<span class="chip">사후점검 ' + pk.join('·') + '</span>' : '') + (e.quant && e.quant.tags.indexOf('사후') >= 0 ? '<span class="chip">사후점검</span>' : '') +
       (e.quant && e.quant.tags.indexOf('모니터링') >= 0 ? '<span class="chip">사후 모니터링</span>' : '') +
-      (br ? '<span class="chip score">2027 ' + esc(br.kind) + '</span>' : '') + '<span class="chip">편람 ' + e.page + '쪽</span></div></section>';
+      (br ? '<span class="chip score">' + Y + ' ' + esc(br.kind) + '</span>' : '') + '<span class="chip">편람 ' + e.page + '쪽</span></div></section>';
 
     var body = '';
     function sec(key, title, html, tool) { secs.push([key, title]); body += '<section class="card sec" id="s-' + key + '"><h3>' + esc(title) + (tool || '') + '</h3>' + html + '</section>'; }
@@ -520,7 +573,7 @@
 
     // 5. 설명회 해설 (편람 원문과 구분)
     if (br) {
-      sec('br', '설명회 해설', '<p class="muted" style="margin-top:-4px">2027 설명회(2026.8.27)에서 안내한 내용을 요약했습니다. 편람 원문이 아닙니다. 항목을 누르면 설명회 자료 쪽이 팝업으로 열립니다.</p>' +
+      sec('br', '설명회 해설', '<p class="muted" style="margin-top:-4px">' + esc(DATA.meta.briefing) + '에서 안내한 내용을 요약했습니다. 편람 원문이 아닙니다. 항목을 누르면 설명회 자료 쪽이 팝업으로 열립니다.</p>' +
         br.pts.map(function (p, pi) {
           return '<button type="button" class="form form-btn ch-btn" data-br="' + pi + '" aria-haspopup="dialog"><span class="lbl 변경">' + esc(br.kind.split('·')[0]) + '</span><span class="ttl">' + p + '</span>' +
             '<svg class="pdf-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg></button>';
@@ -531,15 +584,15 @@
     var jd = '';
     if (e.quant) {
       jd += '<p style="margin:0">정량 평가요소는 판단항목의 기준값으로 판정합니다.</p>';
-      if (['1.3.3', '1.6.3'].indexOf(e.id) >= 0) jd += '<div class="callout">※ 상향된 정량 기준 경과 조치: 3주기 기준은 충족하나 4주기 기준 미만이면 충족(개선권고)으로 판정합니다(설명회 자료 22쪽).</div>';
+      if (['1.3.3', '1.6.3', '2.2.2'].indexOf(e.id) >= 0) jd += '<div class="callout">※ 상향된 정량 기준 경과 조치: 3주기 기준은 충족하나 4주기 기준 미만이면 충족(개선권고)으로 판정합니다(설명회 자료 22쪽).</div>';
     } else {
-      jd += elemJudgeTable();
       jd += '<details class="calc" data-calc><summary><svg class="calc-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg><h4>판단항목별로 골라 보기</h4><span class="calc-hint">판정 연습</span>' + caret() + '</summary><div class="calc-body"><div class="muted">판단항목마다 기대·요구수준을 만족했는지 고르면 예상 요소 판정을 보여 줍니다. (연습용 · 이 기기에만 저장)</div>' +
         e.items.map(function (x) {
           return '<div class="judge-row"><span><b>' + x.k + ')</b> ' + esc(x.x) + '</span><span class="filters" role="group" aria-label="' + x.k + ') 판단"><button type="button" class="filter" data-k="' + x.k + '" data-v="y" aria-pressed="false">충족</button><button type="button" class="filter" data-k="' + x.k + '" data-v="n" aria-pressed="false">미흡</button></span></div>';
         }).join('') + '<div class="out" data-out></div></div></details>';
     }
-    sec('jd', '판정', jd);
+    jd += '<p class="muted" style="margin:8px 0 0">P·CP·F 판정 기준은 모든 요소에 같으므로 <a href="#/judge">판정 기준</a> 화면에 모아 두었습니다.</p>';
+    sec('jd', e.quant ? '판정' : '판정 연습', jd);
 
     // 7. 관련 질문 (백문백답)
     var rq = QA_BY_EL[id] || [];
@@ -795,27 +848,25 @@
     h += '<div class="fold-sec"><h4>일러두기</h4><ul class="dots">' + DATA.notice.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul><p class="muted" style="margin:6px 0 0">편람 105쪽</p></div>';
     h += '</div></details></section>';
 
+    h += cycleCard(true);
     h += '<section class="card"><h3 class="card-h">평가요소를 볼 때 순서</h3><div class="kv">' +
       [['① 판단항목', 'a), b), c)는 평가의 기본 기준입니다. 취지 범위 안에서 객관적 사실로 추가 확인할 수 있지만, 새 요구사항을 임의로 더할 수 없습니다.'],
        ['② 평가활용 참고자료', '대학이 제출한 입증자료로 사실을 확인합니다. 심사대상 기간 안의 자료, 참고자료 범위 안의 자료만 확인합니다.'],
        ['③ 주요 확인 및 유의사항', '중점 확인사항과 인정·불인정 기준입니다. 적용은 평가원의 해석을 따릅니다.'],
        ['④ 판정', '판단항목 결과로 요소를 충족(P)·조건부충족(CP)·미충족(F)으로 판정하고, 준거·영역으로 올라갑니다.']].map(function (p) { return '<div><b>' + esc(p[0]) + '</b><span>' + esc(p[1]) + '</span></div>'; }).join('') + '</div></section>';
 
-    h += '<section class="card"><h3 class="card-h">심사대상 기간</h3><ul class="dots"><li><b>평가인증 심사</b>: 심사연도 직전 2개 학년도(2025~2026학년도), 회계는 2024~2025회계연도</li><li><b>사후점검평가</b>: 심사연도 직전 3개 학년도(2024~2026학년도), 회계는 2023~2025회계연도</li><li>심사대상 기간 이후 개선된 사항은 인정하지 않습니다(사실관계의 오류·정정·불일치만 인정).</li></ul><p class="muted" style="margin:6px 0 0">설명회 자료 7, 22쪽</p></section>';
+    h += '<section class="card"><h3 class="card-h">심사대상 기간</h3><ul class="dots"><li><b>평가인증 심사</b>: 심사연도 직전 2개 학년도(' + (Y - 2) + '~' + (Y - 1) + '학년도), 회계는 ' + (Y - 3) + '~' + (Y - 2) + '회계연도</li><li><b>사후점검평가</b>: 심사연도 직전 3개 학년도(' + (Y - 3) + '~' + (Y - 1) + '학년도), 회계는 ' + (Y - 4) + '~' + (Y - 2) + '회계연도</li><li>심사대상 기간 이후 개선된 사항은 인정하지 않습니다(사실관계의 오류·정정·불일치만 인정).</li></ul><p class="muted" style="margin:6px 0 0">설명회 자료 7, 22쪽</p></section>';
 
     h += '<section class="card"><h3 class="card-h">평가인증 절차 체계</h3><ul class="timeline"><li><b>① 심사</b><span>평가팀</span></li><li><b>② 검토</b><span>평가실무위원회</span></li><li><b>③ 심의</b><span>전문대학평가인증위원회</span></li><li><b>④ 판정</b><span>전문대학평가인증위원회</span></li></ul><p class="muted" style="margin:6px 0 0">설명회 자료 12쪽</p></section>';
 
-    h += '<section class="card"><h3 class="card-h">2027년 일정(안)</h3><ul class="timeline">' +
-      [['8.28~9.11', '평가인증 신청·접수(2026) · 심사 43개교, 사후점검 8개교(예상)'], ['10.22~23', '대학 평가인증담당자(ALO) 교육(2026)'], ['12월', '대학 컨설팅(서면·대면, 2026)'], ['1월', '대학 자체평가 영역별 실무자 연수(2027, 영역별 실습 중심)'],
-       ['4. 5', '대학 자체평가 결과 제출 마감(평가인증시스템)'], ['4.13~16', '서면평가'], ['4.22~30', '현장방문평가(심사 1박2일, 사후점검 1일)'], ['5~6월', '평가결과 검토회의 · 팀장 사후조율회의 · 평가보고서 검토회의'],
-       ['6.16~23', '평가보고서(초안) 송부 및 대학 소명'], ['7.13', '전문대학평가인증위원회 심의 및 판정'], ['7.15', '최종 판정결과 통보']].map(function (s) { return '<li><b>' + esc(s[0]) + '</b><span>' + esc(s[1]) + '</span></li>'; }).join('') +
-      '</ul><div class="callout">※ 재심평가 절차 종료(~8.6) 후 최종 결과를 교육부에 보고(8.10) 예정. 설명회 자료 14~15쪽</div></section>';
-
-    h += '<section class="card"><h3 class="card-h">입증자료 제출 방식(2027 변경)</h3><div class="table-wrap"><table><thead><tr><th>구분</th><th>내용</th><th>제출</th></tr></thead><tbody>' +
-      '<tr><td>공통필수자료</td><td>① 정량지표현황(엑셀) ② 평가요소별 주요사항 표(PDF) ③ 대학발전계획서 ④ 규정류 ⑤ 결산서</td><td>평가인증시스템(압축파일 1개)</td></tr>' +
-      '<tr><td>서면평가자료</td><td>입증자료란에 적은 목록에 해당하는 자료 전체(PDF)</td><td>입증자료관리시스템</td></tr>' +
-      '<tr><td>현장비치자료</td><td>목록 중 ‘현장비치’로 표기한 자료와 평가팀 추가요청 자료</td><td>서류 원본 현장비치</td></tr></tbody></table></div><p class="muted" style="margin:6px 0 0">설명회 자료 24쪽</p></section>';
-    $app.innerHTML = h;
+    var G = DATA.guide || {};
+    if (G.schedule) h += '<section class="card"><h3 class="card-h">' + esc(G.schedule.title) + '</h3><ul class="timeline">' +
+      G.schedule.items.map(function (x) { return '<li><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ul>' +
+      (G.schedule.note ? '<div class="callout">' + esc(G.schedule.note) + '</div>' : '') + '</section>';
+    if (G.submit) h += '<section class="card"><h3 class="card-h">' + esc(G.submit.title) + '</h3><div class="table-wrap"><table><thead><tr>' + G.submit.head.map(function (x) { return '<th>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      G.submit.rows.map(function (r) { return '<tr>' + r.map(function (x) { return '<td>' + esc(x) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
+      (G.submit.src ? '<p class="muted" style="margin:6px 0 0">' + esc(G.submit.src) + '</p>' : '') + '</section>';
+    $app.innerHTML = h; bindSlides($app);
   }
 
   /* ---------- 판정 기준 ---------- */
@@ -841,7 +892,7 @@
 
   /* ---------- 2027 주요 변경 ---------- */
   function viewChanges() {
-    setTitle('2027 주요 변경'); setTab('changes');
+    setTitle(Y + ' 주요 변경'); setTab('changes');
     var h = '<h3 class="section-title" style="margin-top:4px">평가요소별 변경 · 설명회 해설</h3>';
     INDEX.forEach(function (e) {
       var b = DATA.brief[e.id]; if (!b) return;
@@ -1176,6 +1227,13 @@
 
   /* ---------- router ---------- */
   var lastRoute = '';
+  /* 이번 편람의 설명회 자료에 없는 쪽을 가리키는 버튼은 숨김(편람을 바꿔도 화면이 깨지지 않게) */
+  function hideMissingSlides() {
+    var has = function (b) { return b.getAttribute('data-slides').split(',').some(function (n) { return DATA.slideTitles[n]; }); };
+    document.querySelectorAll('[data-slides]').forEach(function (b) { b.hidden = !has(b); });
+    var j = document.getElementById('judgeOpen'), q = document.getElementById('slidesOpen');
+    if (j) j.hidden = !DATA.slideTitles[31]; if (q) q.hidden = !DATA.slideTitles[43];
+  }
   function route() {
     var hash = location.hash.replace(/^#/, '') || '/';
     var path = hash.split('?')[0];
@@ -1193,6 +1251,7 @@
     else if (path === '/qa') viewQA(params);
     else if (path === '/refs') viewRefs();
     else viewHome();
+    hideMissingSlides();
     markSidebar(path);
     if (path !== lastRoute) window.scrollTo(0, 0);
     lastRoute = path;
@@ -1225,22 +1284,47 @@
     var b = $app.querySelector('[data-retry]');
     b.addEventListener('click', boot); b.focus();
   }
-  function boot() {
-    showLoading();
-    return Promise.all([loadJSON('data/accreditation-2027.json'), loadJSON('data/qa-2026.json').catch(function () { return null; })]).then(function (r) {
-      var d = r[0];
-      DATA = d; QA = r[1];
-      buildIndex();
+  /* ---------- 기준 편람(연도별) ----------
+     data/handbooks.json 에 편람을 한 줄씩 추가하면 설정의 '기준 편람'에서 고를 수 있습니다.
+     맨 위(또는 "default": true) 편람이 처음 열립니다. 자세한 방법은 data/README.md */
+  function renderHbInfo() {
+    var $sel = document.getElementById('hbSelect');
+    $sel.innerHTML = HBS.map(function (h) { return '<option value="' + esc(h.id) + '"' + (h === HB ? ' selected' : '') + '>' + esc(h.name) + '</option>'; }).join('');
+    document.getElementById('hbInfo').innerHTML =
+      '<div class="settings-row"><span>평가연도</span><b>' + Y + '</b></div>' +
+      '<div class="settings-row"><span>주기</span><b>' + esc(DATA.meta.cycle) + '</b></div>' +
+      '<div class="settings-row"><span>심사대상 기간</span><b>' + (Y - 2) + '~' + (Y - 1) + '학년도 (회계 ' + (Y - 3) + '~' + (Y - 2) + ')</b></div>' +
+      '<div class="settings-row"><span>발간</span><b>' + esc(DATA.meta.published) + '</b></div>';
+  }
+  function useHandbook(h) {
+    return Promise.all([loadJSON(h.data), h.qa ? loadJSON(h.qa).catch(function () { return null; }) : Promise.resolve(null)]).then(function (r) {
+      HB = h; Y = h.year || parseInt(h.id, 10); DATA = r[0]; QA = r[1];
+      try { localStorage.setItem('acc-hb', h.id); } catch (e) {}
+      state.filter = '전체';
+      buildIndex(); makeQaNote();
       QA_BY_EL = {};
       if (QA) QA.items.forEach(function (q) { q.els.forEach(function (id) { (QA_BY_EL[id] = QA_BY_EL[id] || []).push(q); }); });
-      document.getElementById('hbInfo').innerHTML =
-        '<div class="settings-row"><span>평가연도</span><b>2027</b></div>' +
-        '<div class="settings-row"><span>주기</span><b>' + esc(d.meta.cycle) + '</b></div>' +
-        '<div class="settings-row"><span>심사대상 기간</span><b>2025~2026학년도 (회계 2024~2025)</b></div>' +
-        '<div class="settings-row"><span>발간</span><b>' + esc(d.meta.published) + '</b></div>';
+      var t1 = document.querySelector('.hero-title .ht-1'); if (t1) t1.textContent = Y + ' 전문대학';
+      var ct = document.getElementById('chgTab'); if (ct) ct.textContent = CHG();
+      renderHbInfo();
       renderSidebar();
-      document.getElementById('footer').innerHTML = '출처 : ' + esc(d.meta.title) + ' (' + esc(d.meta.publisher) + ', ' + esc(d.meta.published) + '), ' + esc(d.meta.briefing) + ' 자료, 2026 백문백답 컨설팅 자료집(2026.3.). 설명회 해설과 백문백답은 설명회 자료를 요약한 것으로 편람 원문과 구분해 표시했습니다. 본 페이지는 열람 편의를 위한 정리본이며, 정확한 내용은 편람 원문을 확인하세요.';
+      document.getElementById('footer').innerHTML = '출처 : ' + esc(DATA.meta.title) + ' (' + esc(DATA.meta.publisher) + ', ' + esc(DATA.meta.published) + '), ' + esc(DATA.meta.briefing) + ' 자료' +
+        (QA ? ', ' + esc(QA.meta.title) + '(' + esc(QA.meta.published) + ')' : '') + '. 설명회 해설과 백문백답은 편람 원문과 구분해 표시했습니다. 본 페이지는 열람 편의를 위한 정리본이며, 정확한 내용은 편람 원문을 확인하세요.';
+      lastRoute = '';
       route();
+    });
+  }
+  document.getElementById('hbSelect').addEventListener('change', function (e) {
+    var h = HBS.filter(function (x) { return x.id === e.target.value; })[0];
+    if (h && h !== HB) { showLoading(h.name + '을(를) 불러오는 중입니다'); useHandbook(h).catch(fail); }
+  });
+  function boot() {
+    showLoading();
+    return loadJSON('data/handbooks.json').then(function (list) {
+      HBS = list;
+      var saved = null; try { saved = localStorage.getItem('acc-hb'); } catch (e) {}
+      var h = list.filter(function (x) { return x.id === saved; })[0] || list.filter(function (x) { return x.default; })[0] || list[0];
+      return useHandbook(h);
     }).catch(fail);
   }
   boot();

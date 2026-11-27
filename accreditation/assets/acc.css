@@ -75,3 +75,33 @@ a.chip { text-decoration: none; }
 
 /* 요약 카드 제목이 휴대폰에서 줄바꿈되지 않게 */
 .summary .total b { white-space: nowrap; }
+
+/* 우리 대학 평가주기: 단계 띠 (휴대폰에서는 세로) */
+.cycle-steps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; counter-reset: none; }
+.cycle-steps li { display: flex; flex-direction: column; gap: 2px; padding: 10px 10px; border-radius: var(--r-sm, 10px); background: var(--surface-2); border-top: 3px solid var(--line); min-width: 0; }
+.cycle-steps li b { font-size: var(--fs-md); color: var(--text); }
+.cycle-steps li span { font-weight: 700; font-size: var(--fs-md); color: var(--text-2); }
+.cycle-steps li small { font-size: var(--fs-xs); color: var(--text-3); line-height: 1.45; }
+.cycle-steps li.now { background: var(--college-soft); border-top-color: var(--college); }
+.cycle-steps li.now b, .cycle-steps li.now span { color: var(--college); }
+.cycle .table-wrap { margin-top: 12px; }
+.cycle-tg { display: inline-flex; align-items: center; gap: var(--sp-1); min-height: var(--touch); margin: -10px 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; cursor: pointer; }
+.cycle-tg .caret { color: var(--text-3); transform: rotate(90deg); transition: transform .2s; }
+.cycle-tg[aria-expanded="false"] .caret { transform: none; }
+.cycle-tg:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-xs); }
+.cycle-sum { display: none; margin: 0; font-size: var(--fs-sm); }
+.cycle.folded .cycle-sum { display: block; }
+.cycle.folded h3 { margin-bottom: 4px; }
+@media (max-width: 599px) {
+  .cycle-steps { grid-template-columns: 1fr; }
+  .cycle-steps li { display: grid; grid-template-columns: 92px 1fr; column-gap: 10px; border-top: 0; border-left: 3px solid var(--line); padding: 8px 10px; }
+  .cycle-steps li.now { border-left-color: var(--college); }
+  .cycle-steps li b { grid-row: span 2; }
+}
+
+/* 관리자 설정: GitHub 토큰 만들기 바로가기 (권한·기간을 미리 채운 GitHub 페이지를 새 창으로) */
+.admin-link { display: inline-flex; flex-wrap: wrap; align-items: center; column-gap: 6px; min-height: var(--touch); font-size: var(--fs-sm); font-weight: 600; color: var(--action); text-decoration: none; }
+.admin-link svg { width: 16px; height: 16px; flex: none; }
+.admin-link small { flex-basis: 100%; padding-left: 22px; font-size: var(--fs-xs); font-weight: 400; color: var(--text-3); }
+.admin-link:hover { text-decoration: underline; }
+.admin-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--r-xs); }

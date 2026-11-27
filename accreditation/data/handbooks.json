@@ -1,0 +1,12 @@
+[
+  {
+    "id": "2027",
+    "year": 2027,
+    "name": "2027년 편람 (4주기)",
+    "data": "data/accreditation-2027.json",
+    "docs": "docs/2027/",
+    "qa": "data/qa-2026.json",
+    "qaYear": 2026,
+    "qaDocs": "docs/2026/qa/"
+  }
+]
