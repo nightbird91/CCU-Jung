@@ -115,7 +115,7 @@
         if (items.length) body += renderCrit(c, items);
       });
       if (!n) return;
-      h += '<section class="card cat ' + areaCls(a) + '" id="area-' + a.id + '"><div class="cat-head"><div class="cat-badge">' + esc(a.id) + '</div><div><div class="meta">평가영역 · 준거 ' + a.criteria.length + '개</div><h2>' + esc(a.name) + '</h2></div><div class="pts">' + n + '<small>요소</small></div></div>' +
+      h += '<section class="card cat ' + areaCls(a) + '" id="area-' + a.id + '"><div class="cat-head"><div class="cat-badge">' + esc(a.id) + '</div><div><div class="meta">평가영역 · 준거 ' + a.criteria.length + '개</div><h2>' + esc(a.name) + '</h2></div></div>' +
         '<div class="field">' + body + '</div></section>';
     });
     if (h.indexOf('class="card cat') < 0) h += '<p class="empty">해당 유형의 평가요소가 없습니다.</p>';
@@ -251,7 +251,7 @@
     h += '<ul class="tree">';
     AREAS.forEach(function (a) {
       var ne = a.criteria.reduce(function (s, c) { return s + c.elements.length; }, 0);
-      h += '<li class="t1 ' + areaCls(a) + '" data-node="a' + a.id + '"><button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button><a class="t1-link" href="#/a/' + a.id + '" data-key="a' + a.id + '"><i>' + esc(a.id) + '</i><span class="tn">' + esc(a.name) + '</span><span class="tp">' + ne + '요소</span></a><ul>';
+      h += '<li class="t1 ' + areaCls(a) + '" data-node="a' + a.id + '"><button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button><a class="t1-link" href="#/a/' + a.id + '" data-key="a' + a.id + '"><i>' + esc(a.id) + '</i><span class="tn">' + esc(a.name) + '</span></a><ul>';
       a.criteria.forEach(function (c) {
         h += '<li class="t2" data-node="' + c.id + '"><button class="tg" type="button" aria-label="접기/펼치기" aria-expanded="true">' + caret() + '</button><a class="t2-link" href="#/c/' + c.id + '" data-key="c' + c.id + '"><em>' + esc(c.id) + '</em><span class="tn">' + esc(c.name) + '</span></a><ul>';
         c.elements.forEach(function (e) {
@@ -263,6 +263,7 @@
     });
     h += '</ul>';
     h += '</nav><div class="side-extra">' +
+      '<a class="side-link" href="#/process" data-key="process"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="12" r="2"/><path d="M8 6h4a4 4 0 0 1 4 4M8 18h4a4 4 0 0 0 4-4"/></svg><b>평가인증 절차</b></a>' +
       '<a class="side-link" href="#/guide" data-key="guide"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><b>평가 안내 · 일정</b></a>' +
       '<a class="side-link" href="#/judge" data-key="judge"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/></svg><b>판정 기준</b></a>' +
       '<a class="side-link" href="#/changes" data-key="changes"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg><b>' + Y + ' 주요 변경</b></a>' +
@@ -298,7 +299,7 @@
     if (path.indexOf('/e/') === 0) { var e = BY_ID[path.slice(3)]; if (e) { keys = ['e' + e.id, 'c' + e._crit.id, 'a' + e._area.id]; expandTo(['a' + e._area.id, e._crit.id]); } }
     else if (path.indexOf('/c/') === 0) { var cc = CRIT[path.slice(3)]; if (cc) { keys = ['c' + cc.id, 'a' + cc._area.id]; expandTo(['a' + cc._area.id]); } }
     else if (path.indexOf('/a/') === 0) { keys = ['a' + path.slice(3)]; }
-    else if (path === '/guide' || path === '/judge' || path === '/changes' || path === '/search' || path === '/qa' || path === '/refs') keys = [path.slice(1)];
+    else if (path === '/process' || path === '/guide' || path === '/judge' || path === '/changes' || path === '/search' || path === '/qa' || path === '/refs') keys = [path.slice(1)];
     else keys = ['home'];
     $side.querySelectorAll('[data-key]').forEach(function (a) {
       var on = keys.indexOf(a.getAttribute('data-key')) >= 0;
@@ -849,10 +850,57 @@
     $r.innerHTML = h;
   }
 
+  /* ---------- 평가인증 절차 (편람 Ⅱ장) ---------- */
+  var CIRC = '①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮';
+  function slideTool(nums) {
+    nums = (nums || []).filter(function (n) { return DATA.slideTitles[n]; });
+    if (!nums.length) return '';
+    return '<button type="button" class="sec-tool" data-slides="' + nums.join(',') + '" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>설명회 ' + nums.join('·') + '쪽</button>';
+  }
+  function submitTable(G) {
+    return '<div class="table-wrap"><table><thead><tr>' + G.head.map(function (x) { return '<th>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      G.rows.map(function (r) { return '<tr>' + r.map(function (x) { return '<td>' + esc(x) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
+      (G.src ? '<p class="muted" style="margin:6px 0 0">' + esc(G.src) + '</p>' : '');
+  }
+  function viewProcess(params) {
+    setTitle('평가인증 절차'); setTab('guide');
+    var P = DATA.process;
+    if (!P) { $app.innerHTML = '<section class="card"><p>이 편람에는 절차 정리가 없습니다.</p></section>'; return; }
+    var G = DATA.guide || {};
+    var h = '<section class="card"><h3 class="card-h">' + esc(P.title) + slideTool([12]) + '</h3><p style="margin:0 0 12px;color:var(--text-2)">' + esc(P.intro) + '</p><div class="proc-map">' +
+      P.phases.map(function (ph) {
+        return '<div class="proc-ph"><b>' + esc(ph.name) + '</b><div class="proc-chips">' + ph.steps.map(function (st) {
+          return '<a href="#/process?s=' + st.n + '" class="proc-chip' + (st.todo ? ' ours' : '') + '"><em>' + st.n + '</em>' + esc(st.name) + '</a>';
+        }).join('') + '</div></div>';
+      }).join('') + '</div><p class="muted" style="margin:10px 0 0"><span class="proc-dot"></span> 우리 대학이 할 일이 있는 단계</p></section>';
+    if (P.chain) h += '<section class="card"><h3 class="card-h">평가인증 절차 체계</h3><ul class="timeline">' + P.chain.map(function (c) { return '<li><b>' + esc(c[0]) + '</b><span>' + esc(c[1]) + '</span></li>'; }).join('') + '</ul>' + (P.chainSrc ? '<p class="muted" style="margin:6px 0 0">' + esc(P.chainSrc) + '</p>' : '') + '</section>';
+    var open = +(params && params.s) || 0;
+    P.phases.forEach(function (ph) {
+      var a = ph.steps[0].n, b = ph.steps[ph.steps.length - 1].n;
+      h += '<h3 class="section-title">' + esc(ph.name) + ' <small class="muted">' + CIRC[a - 1] + '~' + CIRC[b - 1] + '</small></h3><section class="card proc-list">';
+      ph.steps.forEach(function (st) {
+        h += '<details class="fold proc-step" id="step-' + st.n + '"' + (open === st.n ? ' open' : '') + '><summary><span class="proc-n' + (st.todo ? ' ours' : '') + '">' + st.n + '</span><span class="fold-t"><b>' + esc(st.name) + '</b><small>' + esc(st.who) + (st.when ? ' · ' + esc(st.when) : '') + '</small></span><span class="fold-hint">펼쳐 보기</span>' + caret() + '</summary><div class="fold-body">' +
+          '<ul class="dots">' + st.pts.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+          (st.n === 6 && G.submit ? '<h4 class="proc-sub">' + esc(G.submit.title) + '</h4>' + submitTable(G.submit) : '') +
+          (st.n === 6 ? '<p class="muted" style="margin:8px 0 0">우리 대학 심사대상 기간은 <a href="#/guide">평가 안내 · 일정</a>에서 확인하세요.</p>' : '') +
+          (st.n === 12 ? '<p class="muted" style="margin:8px 0 0"><a href="#/judge">판정 기준 자세히 보기</a></p>' : '') +
+          (st.todo ? '<div class="callout proc-todo"><b>우리 대학 할 일</b> ' + esc(st.todo) + '</div>' : '') +
+          '<div class="proc-foot"><span class="muted">편람 ' + esc(st.page) + '쪽</span>' + slideTool(st.slides) + '</div></div></details>';
+      });
+      h += '</section>';
+    });
+    h += '<p class="muted" style="margin:4px 2px 0">' + esc(P.src) + '</p>';
+    $app.innerHTML = h;
+    $app.querySelectorAll('[data-slides]').forEach(function (b) {
+      b.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); openSlides(b.textContent.trim(), DATA.meta.briefing, b.getAttribute('data-slides').split(',').map(Number)); });
+    });
+    if (open) { var el = document.getElementById('step-' + open); if (el) setTimeout(function () { el.scrollIntoView({ block: 'start' }); window.scrollBy(0, -70); }, 0); }
+  }
+
   /* ---------- 평가 안내 (편람 Ⅱ·Ⅲ장 + 설명회) ---------- */
   function viewGuide() {
     setTitle('평가 안내 · 일정'); setTab('guide');
-    var h = '';
+    var h = DATA.process ? '<a class="card proc-link" href="#/process"><b>평가인증 절차 15단계</b><span>신청부터 후속조치까지 단계별 요점과 우리 대학이 할 일</span>' + caret() + '</a>' : '';
     h += '<section class="card fold-card"><details class="fold" open><summary><span class="fold-t"><b>편람 읽는 법</b><small>기준 체계 · 일러두기</small></span><span class="fold-side"><span class="fold-row"><span class="fold-hint">펼쳐 보기</span>' + caret() + '</span></span></summary><div class="fold-body">';
     h += '<div class="fold-sec"><h4>기준 체계</h4><ul class="dots"><li>평가영역 5개 → 평가준거 30개 → 평가요소 90개 → 판단항목 201개(a, b, c …)</li><li>사후점검평가는 판단항목 102개(약 50%)로, 운영실적·평가 및 환류 개선실적·정량지표 중심입니다. 이 페이지에서는 ‘사후’로 표시합니다.</li><li>평가자는 판단항목을 중심으로 입증자료와 실제 운영 현황을 종합 검토해 평가요소의 충족 여부를 판단합니다.</li></ul><p class="muted" style="margin:6px 0 0">편람 81~83쪽 · 설명회 자료 41~42쪽</p></div>';
     h += '<div class="fold-sec"><h4>일러두기</h4><ul class="dots">' + DATA.notice.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul><p class="muted" style="margin:6px 0 0">편람 105쪽</p></div>';
@@ -867,15 +915,11 @@
 
     h += '<section class="card"><h3 class="card-h">심사대상 기간</h3><ul class="dots"><li><b>평가인증 심사</b>: 심사연도 직전 2개 학년도(' + (Y - 2) + '~' + (Y - 1) + '학년도), 회계는 ' + (Y - 3) + '~' + (Y - 2) + '회계연도</li><li><b>사후점검평가</b>: 심사연도 직전 3개 학년도(' + (Y - 3) + '~' + (Y - 1) + '학년도), 회계는 ' + (Y - 4) + '~' + (Y - 2) + '회계연도</li><li>심사대상 기간 이후 개선된 사항은 인정하지 않습니다(사실관계의 오류·정정·불일치만 인정).</li></ul><p class="muted" style="margin:6px 0 0">설명회 자료 7, 22쪽</p></section>';
 
-    h += '<section class="card"><h3 class="card-h">평가인증 절차 체계</h3><ul class="timeline"><li><b>① 심사</b><span>평가팀</span></li><li><b>② 검토</b><span>평가실무위원회</span></li><li><b>③ 심의</b><span>전문대학평가인증위원회</span></li><li><b>④ 판정</b><span>전문대학평가인증위원회</span></li></ul><p class="muted" style="margin:6px 0 0">설명회 자료 12쪽</p></section>';
 
     var G = DATA.guide || {};
     if (G.schedule) h += '<section class="card"><h3 class="card-h">' + esc(G.schedule.title) + '</h3><ul class="timeline">' +
       G.schedule.items.map(function (x) { return '<li><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ul>' +
       (G.schedule.note ? '<div class="callout">' + esc(G.schedule.note) + '</div>' : '') + '</section>';
-    if (G.submit) h += '<section class="card"><h3 class="card-h">' + esc(G.submit.title) + '</h3><div class="table-wrap"><table><thead><tr>' + G.submit.head.map(function (x) { return '<th>' + esc(x) + '</th>'; }).join('') + '</tr></thead><tbody>' +
-      G.submit.rows.map(function (r) { return '<tr>' + r.map(function (x) { return '<td>' + esc(x) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>' +
-      (G.submit.src ? '<p class="muted" style="margin:6px 0 0">' + esc(G.submit.src) + '</p>' : '') + '</section>';
     $app.innerHTML = h; bindSlides($app);
   }
 
@@ -1267,6 +1311,7 @@
     else if (path.indexOf('/c/') === 0) viewCrit(path.slice(3));
     else if (path.indexOf('/a/') === 0) viewArea(path.slice(3));
     else if (path === '/search') viewSearch(params.q);
+    else if (path === '/process') viewProcess(params);
     else if (path === '/guide') viewGuide();
     else if (path === '/judge') viewJudge();
     else if (path === '/changes') viewChanges();
@@ -1312,9 +1357,10 @@
   function renderHbInfo() {
     var $sel = document.getElementById('hbSelect');
     $sel.innerHTML = HBS.map(function (h) { return '<option value="' + esc(h.id) + '"' + (h === HB ? ' selected' : '') + '>' + esc(h.name) + '</option>'; }).join('');
-    document.getElementById('hbInfo').innerHTML =
+    document.getElementById('hbMeta').innerHTML =
       '<div class="settings-row"><span>주기</span><b>' + esc(DATA.meta.cycle) + '</b></div>' +
-      '<div class="settings-row"><span>발간</span><b>' + esc(DATA.meta.published) + '</b></div>' +
+      '<div class="settings-row"><span>발간</span><b>' + esc(DATA.meta.published) + '</b></div>';
+    document.getElementById('hbInfo').innerHTML =
       '<div class="settings-row"><span>우리 대학 심사대상 기간 · ' + OUR.year + ' ' + ourKindName() + '</span><b>' + ourPeriod(true) + '</b></div>';
     var ks = document.getElementById('ourKind'), ys = document.getElementById('ourYear'), opts = '';
     for (var yy = 2026; yy <= 2040; yy++) opts += '<option value="' + yy + '"' + (yy === OUR.year ? ' selected' : '') + '>' + yy + '년</option>';

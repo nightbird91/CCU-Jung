@@ -109,4 +109,30 @@ a.chip { text-decoration: none; }
 /* 설정: 우리 대학 평가(종류·연도) 선택 바로 아래 심사대상 기간 */
 .our-grid + .settings-grid { border-top: 0; padding-top: 0; }
 .our-grid .settings-select { padding-left: 10px; padding-right: 6px; }
-.settings-grid b small.fy { display: inline-block; margin-top: 2px; font-size: calc(var(--fs-md) * .7); font-weight: 700; color: var(--text-2); }
+.settings-grid b small.fy { display: inline-block; margin-top: 2px; font-size: calc(var(--fs-md) * .82); font-weight: 700; color: var(--text-2); }
+
+/* 평가인증 절차 */
+.proc-map { display: grid; gap: 10px; }
+.proc-ph { display: grid; grid-template-columns: 44px 1fr; gap: 8px; align-items: start; }
+.proc-ph > b { font-size: var(--fs-sm); color: var(--primary); padding-top: 6px; }
+.proc-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.proc-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--text); text-decoration: none; font-size: var(--fs-sm); font-weight: 600; }
+.proc-chip em, .proc-n { font-style: normal; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--surface-2); color: var(--text-2); font-size: var(--fs-xs); font-weight: 800; flex: none; font-variant-numeric: tabular-nums; }
+.proc-chip.ours em, .proc-n.ours { background: var(--primary); color: #fff; }
+.proc-chip:hover { border-color: var(--action); }
+.proc-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); vertical-align: -1px; margin-right: 2px; }
+.proc-list { padding: 4px 12px 12px; }
+.proc-list details.fold { margin-top: 8px; }
+.proc-n { width: 28px; height: 28px; font-size: var(--fs-sm); }
+.proc-todo b { color: var(--primary); margin-right: 6px; }
+.proc-sub { margin: 12px 0 6px; font-size: var(--fs-md); color: var(--primary); }
+.proc-foot { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.proc-foot .sec-tool { margin-left: auto; }
+.proc-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); flex-wrap: wrap; }
+.proc-link b { color: var(--primary); font-size: var(--fs-lg); }
+.proc-link span { color: var(--text-2); font-size: var(--fs-sm); flex: 1; min-width: 180px; }
+.proc-link .caret { width: 18px; height: 18px; color: var(--action); flex: none; }
+.proc-link:hover { border-color: var(--action); }
+.section-title small { font-weight: 600; font-size: var(--fs-sm); }
+.hb-meta { border-top: 0; padding-top: 0; margin-top: 10px; }
+#hbInfo .settings-row { grid-column: 1 / -1; }
