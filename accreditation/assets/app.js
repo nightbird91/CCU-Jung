@@ -209,6 +209,7 @@
       '<a class="side-link" href="#/judge" data-key="judge"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M3 14h18M9 9v11"/></svg><b>판정 기준</b></a>' +
       '<a class="side-link" href="#/changes" data-key="changes"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg><b>2027 주요 변경</b></a>' +
       '<a class="side-link" href="#/qa" data-key="qa"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.3 2.4c-.5.2-.8.6-.8 1.1v.5M12 16.5h.01"/></svg><b>백문백답</b></a>' +
+      '<a class="side-link" href="#/refs" data-key="refs"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><rect x="9" y="12" width="6" height="5" rx="1"/><path d="M10.5 12v-1a1.5 1.5 0 0 1 3 0v1"/></svg><b>참고자료</b></a>' +
       '<a class="side-link" href="#/search" data-key="search"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><b>검색</b></a></div>';
     $side.innerHTML = '<div class="sidebar-inner">' + h + '</div>';
     var collapsed = {};
@@ -239,7 +240,7 @@
     if (path.indexOf('/e/') === 0) { var e = BY_ID[path.slice(3)]; if (e) { keys = ['e' + e.id, 'c' + e._crit.id, 'a' + e._area.id]; expandTo(['a' + e._area.id, e._crit.id]); } }
     else if (path.indexOf('/c/') === 0) { var cc = CRIT[path.slice(3)]; if (cc) { keys = ['c' + cc.id, 'a' + cc._area.id]; expandTo(['a' + cc._area.id]); } }
     else if (path.indexOf('/a/') === 0) { keys = ['a' + path.slice(3)]; }
-    else if (path === '/guide' || path === '/judge' || path === '/changes' || path === '/search' || path === '/qa') keys = [path.slice(1)];
+    else if (path === '/guide' || path === '/judge' || path === '/changes' || path === '/search' || path === '/qa' || path === '/refs') keys = [path.slice(1)];
     else keys = ['home'];
     $side.querySelectorAll('[data-key]').forEach(function (a) {
       var on = keys.indexOf(a.getAttribute('data-key')) >= 0;
@@ -854,6 +855,325 @@
     $app.innerHTML = h;
   }
 
+  /* ---------- 참고자료 (비밀번호로 암호화된 파일) ----------
+     파일은 AES-GCM 으로 암호화해 refs/*.bin 으로 올리고, 목록은 data/refs.json.
+     비밀번호 → PBKDF2(SHA-256) 키. 서버가 없으므로 관리자 작업은 GitHub API(관리자 토큰)로 직접 커밋. */
+  var GH_REPO = 'nightbird91/CCU-Jung', GH_BASE = 'accreditation/', GH_BRANCH = 'main';
+  var REFS = null, REFKEY = null, REF_OK = 'jsh-refs-ok', refLockOpen = false;
+  var enc = new TextEncoder(), dec = new TextDecoder();
+  function b64(buf) {
+    var b = new Uint8Array(buf), s = '';
+    for (var i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  function unb64(s) { var bin = atob(s), b = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i); return b; }
+  function rand(n) { return crypto.getRandomValues(new Uint8Array(n)); }
+  function deriveKey(pw, kdf) {
+    return crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']).then(function (base) {
+      return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: unb64(kdf.salt), iterations: kdf.iter, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    });
+  }
+  function aesEnc(key, data) { var iv = rand(12); return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, data).then(function (ct) { return { iv: b64(iv), ct: ct }; }); }
+  function aesDec(key, iv, data) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(iv) }, key, data); }
+  function checkKey(key, refs) {
+    return aesDec(key, refs.check.iv, unb64(refs.check.ct)).then(function (p) { if (dec.decode(p) !== REF_OK) throw new Error('bad'); return key; });
+  }
+  function fmtSize(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(n / 1024)) + 'KB'; }
+  function loadRefs(fresh) {
+    if (REFS && !fresh) return Promise.resolve(REFS);
+    var inl = document.querySelector('script[type="application/json"][data-src="data/refs.json"]');
+    var p = inl ? Promise.resolve(JSON.parse(inl.textContent)) : fetch('data/refs.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    return p.then(function (j) { REFS = j; return j; });
+  }
+  function unlock(pw) {
+    return loadRefs().then(function (refs) {
+      if (!refs.check) throw new Error('관리자가 아직 비밀번호를 설정하지 않았습니다.');
+      return deriveKey(pw, refs.kdf).then(function (k) { return checkKey(k, refs); }).catch(function (e) {
+        if (e && e.message === '관리자가 아직 비밀번호를 설정하지 않았습니다.') throw e;
+        throw new Error('비밀번호가 맞지 않습니다.');
+      });
+    }).then(function (k) { REFKEY = k; syncLock(); return k; });
+  }
+  function syncLock() {
+    var on = !!REFKEY;
+    var st = document.getElementById('lockState');
+    st.innerHTML = on ? '<b class="lk on">다운로드 가능</b><small>이 창을 닫으면 다시 잠깁니다</small>' : '<b class="lk">잠김</b><small>비밀번호를 넣으면 참고자료를 내려받을 수 있습니다</small>';
+    document.getElementById('lockForm').hidden = on;
+    document.getElementById('lockOff').hidden = !on;
+    if (location.hash.indexOf('#/refs') === 0) viewRefs();
+  }
+  function msg(id, t, bad) { var m = document.getElementById(id); m.textContent = t || ''; m.classList.toggle('bad', !!bad); }
+
+  document.getElementById('lockForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var $pw = document.getElementById('lockPw');
+    if (!$pw.value) { msg('lockMsg', '비밀번호를 입력해 주세요.', true); return; }
+    msg('lockMsg', '확인 중…');
+    unlock($pw.value).then(function () { $pw.value = ''; msg('lockMsg', ''); }, function (err) { msg('lockMsg', err.message, true); $pw.select(); });
+  });
+  document.getElementById('lockOff').addEventListener('click', function () { REFKEY = null; refLockOpen = false; syncLock(); msg('lockMsg', '다시 잠갔습니다.'); });
+
+  /* 관리자: GitHub 토큰 (이 기기 localStorage 에만) */
+  function ghToken() { try { return localStorage.getItem('jsh-gh-token') || ''; } catch (e) { return ''; } }
+  function gh(method, path, body, raw) {
+    var t = ghToken();
+    if (!t) return Promise.reject(new Error('관리자 설정에서 GitHub 토큰을 먼저 저장해 주세요.'));
+    var url = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + GH_BASE + path + (method === 'GET' ? '?ref=' + GH_BRANCH + '&t=' + Date.now() : '');
+    return fetch(url, {
+      method: method, cache: 'no-store',
+      headers: { Authorization: 'Bearer ' + t, Accept: raw ? 'application/vnd.github.raw' : 'application/vnd.github+json' },
+      body: body ? JSON.stringify(body) : undefined
+    }).catch(function (e) {
+      throw new Error('GitHub에 연결하지 못했습니다. 실제 사이트(nightbird91.github.io)에서 다시 시도해 주세요. (' + (e && e.message ? e.message : '네트워크 오류') + ')');
+    }).then(function (r) {
+      if (r.status === 404 && method === 'GET') return null;
+      if (r.status === 401 || r.status === 403) throw new Error('GitHub 토큰 권한이 없습니다. 토큰을 확인해 주세요.');
+      if (!r.ok) throw new Error('GitHub 오류 (' + r.status + ')');
+      return raw ? r.arrayBuffer() : r.json();
+    });
+  }
+  function ghPut(path, bytes, message) {
+    return gh('GET', path).then(function (cur) {
+      return gh('PUT', path, { message: message, content: b64(bytes), branch: GH_BRANCH, sha: cur ? cur.sha : undefined });
+    });
+  }
+  function ghDel(path, message) {
+    return gh('GET', path).then(function (cur) { if (cur) return gh('DELETE', path, { message: message, sha: cur.sha, branch: GH_BRANCH }); });
+  }
+  function ghRefs() { return gh('GET', 'data/refs.json', null, true).then(function (b) { return b ? JSON.parse(dec.decode(b)) : { kdf: null, check: null, files: [] }; }); }
+  function saveRefs(refs, message) { return ghPut('data/refs.json', enc.encode(JSON.stringify(refs, null, 2) + '\n'), message).then(function () { REFS = refs; return refs; }); }
+  function refId() { return 'r' + Date.now().toString(36) + Array.prototype.map.call(rand(3), function (x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }
+
+  var $tok = document.getElementById('ghToken');
+  function syncAdmin() {
+    $tok.value = ghToken() ? '••••••••••••' : '';
+    var $ts = document.getElementById('tokState');
+    $ts.textContent = ghToken() ? '저장됨' : '없음'; $ts.classList.toggle('on', !!ghToken());
+    var has = REFS && REFS.check;
+    document.getElementById('pwForm').hidden = !ghToken();   // 토큰이 없는 기기에는 비밀번호 변경 칸을 숨김
+    document.getElementById('pwOldRow').hidden = !has;
+    document.getElementById('pwTitle').textContent = has ? '다운로드 비밀번호 변경' : '다운로드 비밀번호 설정';
+  }
+  syncAdmin();
+  document.getElementById('adminBox').addEventListener('toggle', function () { if (this.open) loadRefs().then(syncAdmin, syncAdmin); });
+  $tok.addEventListener('focus', function () { if (/^•+$/.test($tok.value)) $tok.value = ''; });
+  function tokMsg(t, kind) { var m = document.getElementById('tokMsg'); m.textContent = t || ''; m.className = 'tok-msg' + (kind ? ' ' + kind : ''); if (t && m.scrollIntoView) m.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+  document.getElementById('ghSave').addEventListener('click', function () {
+    var btn = this, v = $tok.value.replace(/[^\x21-\x7e]/g, '');
+    if (!v) { tokMsg(ghToken() ? '이미 토큰이 저장되어 있습니다. 바꾸려면 새 토큰을 붙여 넣고 다시 누르세요.' : '토큰을 붙여 넣은 뒤 눌러 주세요.', ghToken() ? 'ok' : 'bad'); return; }
+    try { localStorage.setItem('jsh-gh-token', v); } catch (e) {}
+    btn.disabled = true; btn.textContent = '확인 중…'; tokMsg('GitHub에 토큰을 확인하고 있습니다…');
+    gh('GET', 'data/refs.json').then(function () {
+      syncAdmin(); tokMsg('✓ 토큰이 저장되었습니다. 이 기기에서 관리자 기능을 쓸 수 있습니다.', 'ok');
+      if (location.hash.indexOf('#/refs') === 0) viewRefs();
+    }, function (err) {
+      try { localStorage.removeItem('jsh-gh-token'); } catch (e) {}
+      syncAdmin(); tokMsg('✕ 저장하지 못했습니다. ' + err.message, 'bad');
+    }).then(function () { btn.disabled = false; btn.textContent = '토큰 저장'; });
+  });
+  document.getElementById('ghClear').addEventListener('click', function () {
+    try { localStorage.removeItem('jsh-gh-token'); } catch (e) {}
+    syncAdmin(); tokMsg('이 기기에서 토큰을 지웠습니다.', 'ok');
+    if (location.hash.indexOf('#/refs') === 0) viewRefs();
+  });
+  var busy = false;
+  document.getElementById('pwForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (busy) return;
+    var oldPw = document.getElementById('pwOld').value, nw = document.getElementById('pwNew').value, nw2 = document.getElementById('pwNew2').value;
+    if (nw.length < 6) { msg('adminMsg', '새 비밀번호는 6자 이상으로 정해 주세요.', true); return; }
+    if (nw !== nw2) { msg('adminMsg', '새 비밀번호 확인이 일치하지 않습니다.', true); return; }
+    busy = true; msg('adminMsg', '저장소의 최신 목록을 불러오는 중…');
+    var refs, oldKey = null, newKey, kdf = { salt: b64(rand(16)), iter: 250000 }, oldFiles;
+    ghRefs().then(function (r) {
+      refs = r; oldFiles = refs.files.slice();
+      if (!refs.check) return null;
+      if (!oldPw) throw new Error('현재 비밀번호를 입력해 주세요.');
+      return deriveKey(oldPw, refs.kdf).then(function (k) { return checkKey(k, refs); }).catch(function () { throw new Error('현재 비밀번호가 맞지 않습니다.'); });
+    }).then(function (k) {
+      oldKey = k;
+      return deriveKey(nw, kdf);
+    }).then(function (k) {
+      newKey = k;
+      return aesEnc(newKey, enc.encode(REF_OK));
+    }).then(function (chk) {
+      var next = { kdf: kdf, check: { iv: chk.iv, ct: b64(chk.ct) }, files: [] };
+      // 새 키로 다시 암호화해 새 경로에 올린 뒤 목록을 바꾸고, 마지막에 옛 파일을 지운다 (중간에 끊겨도 옛 상태가 유지됨)
+      var chain = Promise.resolve();
+      oldFiles.forEach(function (f, i) {
+        chain = chain.then(function () {
+          msg('adminMsg', '자료 다시 암호화 중… (' + (i + 1) + '/' + oldFiles.length + ')');
+          return gh('GET', f.path, null, true);
+        }).then(function (buf) {
+          if (!buf) return;
+          return aesDec(oldKey, f.iv, buf).then(function (plain) { return aesEnc(newKey, plain); }).then(function (c) {
+            var nf = Object.assign({}, f, { iv: c.iv, path: 'refs/' + refId() + '.bin' });
+            return ghPut(nf.path, new Uint8Array(c.ct), '참고자료: 비밀번호 변경에 따른 재암호화').then(function () { next.files.push(nf); });
+          });
+        });
+      });
+      return chain.then(function () { msg('adminMsg', '목록 저장 중…'); return saveRefs(next, refs.check ? '참고자료: 다운로드 비밀번호 변경' : '참고자료: 다운로드 비밀번호 설정'); });
+    }).then(function () {
+      return oldFiles.reduce(function (p, f) { return p.then(function () { return ghDel(f.path, '참고자료: 옛 암호화 파일 정리'); }); }, Promise.resolve());
+    }).then(function () {
+      REFKEY = newKey; syncLock(); syncAdmin();
+      ['pwOld', 'pwNew', 'pwNew2'].forEach(function (id) { document.getElementById(id).value = ''; });
+      msg('adminMsg', '비밀번호를 저장했습니다. 사이트 반영까지 1~2분 걸립니다.');
+    }).catch(function (err) { msg('adminMsg', err.message || '저장하지 못했습니다.', true); })
+      .then(function () { busy = false; });
+  });
+
+  syncLock();
+
+  /* 참고자료 화면 */
+  function viewRefs() {
+    setTitle('참고자료', '비밀번호를 넣어야 내려받을 수 있습니다');
+    setTab('');
+    if (!REFS) { $app.innerHTML = '<div class="state" role="status"><span class="spinner"></span><b>참고자료 목록을 불러오는 중입니다</b></div>'; }
+    loadRefs().then(renderRefs, function () { $app.innerHTML = '<p class="empty">참고자료 목록을 불러오지 못했습니다.</p>'; });
+  }
+  function renderRefs(refs) {
+    if (location.hash.indexOf('#/refs') !== 0) return;
+    var admin = !!ghToken(), h = '';
+    if (admin) {
+      h += '<section class="card ref-admin"><b>관리자 · 자료 추가</b>' +
+        (refs.check ? (REFKEY ? '<p class="muted">파일은 현재 비밀번호로 암호화되어 올라갑니다. 한 파일 20MB까지.</p><label class="ref-pick"><input type="file" multiple data-add><span>파일 선택</span></label>' : '<p class="muted">자료의 \'잠김\'을 눌러 비밀번호를 입력해 잠금을 풀면 자료를 추가할 수 있습니다.</p>')
+          : '<p class="muted">설정 → 관리자 설정에서 다운로드 비밀번호를 먼저 정해 주세요.</p>') +
+        '<p class="lock-msg" data-admin-msg role="status" aria-live="polite"></p></section>';
+    }
+    var showLock = !refs.check || REFKEY || refLockOpen;   // 잠긴 상태의 비밀번호 칸은 평소 숨기고, 자료의 '잠김'을 누르면 표시
+    if (showLock) {
+      h += '<section class="card ref-lock' + (REFKEY ? ' on' : '') + '">';
+      if (!refs.check) h += '<b>아직 열 수 없습니다</b><p class="muted">관리자가 다운로드 비밀번호를 설정하면 내려받을 수 있습니다.</p>';
+      else if (REFKEY) h += '<b>다운로드 가능</b><p class="muted">이 창을 닫으면 다시 잠깁니다.</p><button type="button" class="lock-link" data-relock>다시 잠그기</button>';
+      else h += '<b>잠김</b><p class="muted">다운로드 비밀번호를 입력해 주세요. 비밀번호는 담당자에게 문의해 주세요.</p><form class="lock-form" data-unlock autocomplete="off"><input type="password" class="lock-input" placeholder="다운로드 비밀번호" aria-label="다운로드 비밀번호"><button type="submit" class="lock-btn">확인</button></form><p class="lock-msg" role="status" aria-live="polite"></p>';
+      h += '</section>';
+    }
+    h += '<h3 class="section-title">자료 목록 <span class="muted">' + refs.files.length + '개</span></h3>';
+    if (!refs.files.length) h += '<p class="empty">등록된 참고자료가 없습니다.</p>';
+    else {
+      if (admin && refs.files.length > 1) h += '<div class="ref-order" data-order-bar hidden><span>순서가 바뀌었습니다</span><button type="button" class="lock-btn sm" data-order-save>순서 저장</button><button type="button" class="lock-btn ghost sm" data-order-cancel>취소</button></div>';
+      h += '<ul class="ref-list' + (admin ? ' sortable' : '') + '">';
+      refs.files.forEach(function (f, i) {
+        h += '<li class="card ref-item" data-i="' + i + '">' + (admin && refs.files.length > 1 ? '<button type="button" class="ref-grip" data-grip aria-label="' + esc(f.name) + ' 순서 옮기기. 끌어서 옮기거나 위·아래 화살표 키" title="끌어서 순서 바꾸기"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></button>' : '') + '<svg class="ref-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg>' +
+          '<div class="ref-t"><b>' + esc(f.name) + '</b><small>' + fmtSize(f.size) + (f.date ? ' · ' + esc(f.date) : '') + '</small></div>' +
+          '<button type="button" class="ref-dl' + (REFKEY ? '' : ' locked') + '" data-dl="' + i + '"' + (REFKEY ? '' : ' aria-label="' + esc(f.name) + ' 잠김, 눌러서 비밀번호 입력"') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (REFKEY ? '<path d="M12 4v12M7 11l5 5 5-5M5 20h14"/>' : '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</svg>' + (REFKEY ? '받기' : '잠김') + '</button>' +
+          (admin ? '<button type="button" class="ref-del" data-del="' + i + '" aria-label="' + esc(f.name) + ' 삭제">삭제</button>' : '') + '</li>';
+      });
+      h += '</ul>';
+    }
+    $app.innerHTML = h;
+
+    var f = $app.querySelector('[data-unlock]');
+    if (f) f.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var inp = f.querySelector('input'), m = $app.querySelector('.ref-lock .lock-msg');
+      if (!inp.value) { m.textContent = '비밀번호를 입력해 주세요.'; m.classList.add('bad'); return; }
+      m.textContent = '확인 중…'; m.classList.remove('bad');
+      unlock(inp.value).catch(function (err) { m.textContent = err.message; m.classList.add('bad'); inp.select(); });
+    });
+    var rl = $app.querySelector('[data-relock]');
+    if (rl) rl.addEventListener('click', function () { REFKEY = null; refLockOpen = false; syncLock(); });
+    $app.querySelectorAll('[data-dl]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (!REFKEY) {
+          refLockOpen = true; renderRefs(refs);
+          var i = $app.querySelector('[data-unlock] input');
+          if (i) { i.scrollIntoView({ block: 'center' }); i.focus(); }
+          return;
+        }
+        var file = refs.files[+b.getAttribute('data-dl')], label = b.innerHTML;
+        b.disabled = true; b.textContent = '받는 중…';
+        fetch(file.path + '?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+          .then(function (buf) { return aesDec(REFKEY, file.iv, buf); })
+          .then(function (plain) {
+            var url = URL.createObjectURL(new Blob([plain], { type: file.type || 'application/octet-stream' }));
+            var a = document.createElement('a'); a.href = url; a.download = file.name; document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+          })
+          .catch(function () { alertMsg('파일을 받지 못했습니다. 잠시 후 다시 시도해 주세요.'); })
+          .then(function () { b.disabled = false; b.innerHTML = label; });
+      });
+    });
+    function alertMsg(t) { var m = $app.querySelector('[data-admin-msg]') || $app.querySelector('.ref-lock .lock-msg'); if (m) { m.textContent = t; m.classList.add('bad'); } }
+    function adminMsg(t, bad) { var m = $app.querySelector('[data-admin-msg]'); if (m) { m.textContent = t; m.classList.toggle('bad', !!bad); } }
+    var add = $app.querySelector('[data-add]');
+    if (add) add.addEventListener('change', function () {
+      var files = Array.prototype.slice.call(add.files);
+      if (!files.length) return;
+      var big = files.filter(function (x) { return x.size > 20 * 1048576; });
+      if (big.length) { adminMsg(big[0].name + ' 은(는) 20MB를 넘어 올릴 수 없습니다.', true); add.value = ''; return; }
+      var added = [];
+      var chain = files.reduce(function (p, file, i) {
+        return p.then(function () {
+          adminMsg('암호화해 올리는 중… ' + file.name + ' (' + (i + 1) + '/' + files.length + ')');
+          return file.arrayBuffer();
+        }).then(function (buf) { return aesEnc(REFKEY, buf); }).then(function (c) {
+          var meta = { id: refId(), name: file.name, size: file.size, type: file.type || '', date: new Date().toISOString().slice(0, 10), iv: c.iv };
+          meta.path = 'refs/' + meta.id + '.bin';
+          return ghPut(meta.path, new Uint8Array(c.ct), '참고자료 추가: ' + file.name).then(function () { added.push(meta); });
+        });
+      }, Promise.resolve());
+      chain.then(function () { return ghRefs(); }).then(function (latest) {
+        latest.files = latest.files.concat(added);
+        return saveRefs(latest, '참고자료 목록 갱신 (' + added.length + '개 추가)');
+      }).then(function () { renderRefs(REFS); adminMsg(added.length + '개 자료를 올렸습니다. 사이트 반영까지 1~2분 걸립니다.'); },
+        function (err) { adminMsg(err.message || '올리지 못했습니다.', true); });
+    });
+    // 관리자: 손잡이를 끌어 자료 순서 바꾸기 (마우스·터치 공통 pointer 이벤트, 키보드는 위/아래 화살표)
+    var $list = $app.querySelector('.ref-list.sortable'), $bar = $app.querySelector('[data-order-bar]');
+    function curOrder() { return Array.prototype.map.call($list.children, function (li) { return +li.getAttribute('data-i'); }); }
+    function orderChanged() { var o = curOrder(); $bar.hidden = o.every(function (v, k) { return v === k; }); }
+    if ($list && $bar) {
+      $list.querySelectorAll('[data-grip]').forEach(function (g) {
+        var li = g.closest('li');
+        g.addEventListener('pointerdown', function (e) {
+          if (e.button) return;
+          e.preventDefault(); li.classList.add('dragging');   // 항목을 옮기면 포인터 캡처가 풀리므로 document 에서 받는다
+          function move(ev) {
+            var y = ev.clientY, sib = Array.prototype.filter.call($list.children, function (x) { return x !== li; });
+            var before = null;
+            for (var k = 0; k < sib.length; k++) { var r = sib[k].getBoundingClientRect(); if (y < r.top + r.height / 2) { before = sib[k]; break; } }
+            if (before !== li.nextElementSibling || (!before && li !== $list.lastElementChild)) $list.insertBefore(li, before);
+            if (y < 60) window.scrollBy(0, -12); else if (y > window.innerHeight - 60) window.scrollBy(0, 12);
+          }
+          function up() { li.classList.remove('dragging'); document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); document.removeEventListener('pointercancel', up); orderChanged(); }
+          document.addEventListener('pointermove', move); document.addEventListener('pointerup', up); document.addEventListener('pointercancel', up);
+        });
+        g.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowUp' && li.previousElementSibling) $list.insertBefore(li, li.previousElementSibling);
+          else if (e.key === 'ArrowDown' && li.nextElementSibling) $list.insertBefore(li.nextElementSibling, li);
+          else return;
+          e.preventDefault(); g.focus(); orderChanged();
+        });
+      });
+      $bar.querySelector('[data-order-cancel]').addEventListener('click', function () { renderRefs(refs); });
+      $bar.querySelector('[data-order-save]').addEventListener('click', function () {
+        var btn = this, paths = curOrder().map(function (k) { return refs.files[k].path; });
+        btn.disabled = true; adminMsg('순서를 저장하는 중…');
+        ghRefs().then(function (latest) {
+          var rank = {}; paths.forEach(function (p, k) { rank[p] = k; });
+          // 그사이 다른 기기에서 추가된 자료는 맨 뒤에 그대로 둔다
+          latest.files.sort(function (a, b) { return (a.path in rank ? rank[a.path] : 1e9) - (b.path in rank ? rank[b.path] : 1e9); });
+          return saveRefs(latest, '참고자료 순서 변경');
+        }).then(function () { renderRefs(REFS); adminMsg('순서를 저장했습니다. 사이트 반영까지 1~2분 걸립니다.'); },
+          function (err) { btn.disabled = false; adminMsg(err.message || '순서를 저장하지 못했습니다.', true); });
+      });
+    }
+    $app.querySelectorAll('[data-del]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var file = refs.files[+b.getAttribute('data-del')];
+        if (b.getAttribute('data-sure') !== '1') { b.setAttribute('data-sure', '1'); b.textContent = '정말 삭제'; b.classList.add('sure'); return; }
+        b.disabled = true; adminMsg('삭제 중… ' + file.name);
+        ghRefs().then(function (latest) {
+          latest.files = latest.files.filter(function (x) { return x.path !== file.path; });
+          return saveRefs(latest, '참고자료 삭제: ' + file.name);
+        }).then(function () { return ghDel(file.path, '참고자료 파일 삭제: ' + file.name); })
+          .then(function () { renderRefs(REFS); adminMsg(file.name + ' 을(를) 삭제했습니다.'); }, function (err) { b.disabled = false; adminMsg(err.message || '삭제하지 못했습니다.', true); });
+      });
+    });
+  }
+
   /* ---------- router ---------- */
   var lastRoute = '';
   function route() {
@@ -871,6 +1191,7 @@
     else if (path === '/judge') viewJudge();
     else if (path === '/changes') viewChanges();
     else if (path === '/qa') viewQA(params);
+    else if (path === '/refs') viewRefs();
     else viewHome();
     markSidebar(path);
     if (path !== lastRoute) window.scrollTo(0, 0);
