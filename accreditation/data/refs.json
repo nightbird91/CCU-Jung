@@ -1,5 +1,11 @@
 {
-  "kdf": null,
-  "check": null,
+  "kdf": {
+    "salt": "8UjHlDkMp80X4yg3v3NqVw==",
+    "iter": 250000
+  },
+  "check": {
+    "iv": "jWGoDcPTXAU6Gh0I",
+    "ct": "oBFLK80mDOU4f0lIrdiFcAxghY7Xc2q41JN9"
+  },
   "files": []
 }
