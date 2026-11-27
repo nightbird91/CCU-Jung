@@ -7,6 +7,8 @@
     "docs": "docs/2027/",
     "qa": "data/qa-2026.json",
     "qaYear": 2026,
-    "qaDocs": "docs/2026/qa/"
+    "qaDocs": "docs/2026/qa/",
+    "fullPdf": "handbook.pdf",
+    "fullPages": 458
   }
 ]
