@@ -109,3 +109,4 @@ a.chip { text-decoration: none; }
 /* 설정: 우리 대학 평가(종류·연도) 선택 바로 아래 심사대상 기간 */
 .our-grid + .settings-grid { border-top: 0; padding-top: 0; }
 .our-grid .settings-select { padding-left: 10px; padding-right: 6px; }
+.settings-grid b small.fy { display: inline-block; margin-top: 2px; font-size: calc(var(--fs-md) * .7); font-weight: 700; color: var(--text-2); }

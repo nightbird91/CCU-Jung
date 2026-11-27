@@ -148,7 +148,8 @@
   /* 심사대상 기간: 갱신(평가인증 심사)은 직전 2개 학년도, 사후점검평가는 직전 3개 학년도 */
   function ourPeriod(br) {
     var y = OUR.year, p = OUR.kind === 'post' ? [y - 3, y - 1, y - 4, y - 2] : [y - 2, y - 1, y - 3, y - 2];
-    return p[0] + '~' + p[1] + '학년도' + (br ? '<br>' : ' ') + '(' + p[2] + '~' + p[3] + ' 회계년도)';
+    var fy = '(' + p[2] + '~' + p[3] + ' 회계년도)';
+    return p[0] + '~' + p[1] + ' 학년도' + (br ? '<br><small class="fy">' + fy + '</small>' : ' ' + fy);
   }
   function cycleSteps(y) {
     return [
