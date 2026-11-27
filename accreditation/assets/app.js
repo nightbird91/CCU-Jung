@@ -97,6 +97,7 @@
       '<div class="total"><b>5개 영역</b><span class="muted">평가준거 30개 · 평가요소 90개 · 판단항목 201개</span></div>' +
       '<div class="bar acc-bar" role="img" aria-label="평가영역별 평가요소 수">' + AREAS.map(function (a) { var n = a.criteria.reduce(function (s, c) { return s + c.elements.length; }, 0); return '<span class="' + areaCls(a) + '" style="width:' + (n * 100 / INDEX.length) + '%"></span>'; }).join('') + '</div>' +
       '<div class="legend">' + AREAS.map(function (a) { return '<span class="' + areaCls(a) + '"><i></i>' + esc(a.id + '. ' + a.name) + '</span>'; }).join('') + '</div>' +
+      (HB.fullPdf ? '<a class="hb-pdf" href="' + esc(HB.docs + HB.fullPdf) + '" download="accreditation-handbook-' + esc(HB.id) + '.pdf"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>편람 원문 PDF 받기' + (HB.fullPages ? ' <small>' + HB.fullPages + '쪽</small>' : '') + '</a>' : '') +
       '</section>';
     h += cycleCard(false);
 
@@ -1362,6 +1363,9 @@
       '<div class="settings-row"><span>발간</span><b>' + esc(DATA.meta.published) + '</b></div>';
     document.getElementById('hbInfo').innerHTML =
       '<div class="settings-row"><span>우리 대학 심사대상 기간 · ' + OUR.year + ' ' + ourKindName() + '</span><b>' + ourPeriod(true) + '</b></div>';
+    var $full = document.getElementById('fullOpen');
+    $full.hidden = !HB.fullPdf;
+    if (HB.fullPdf) { $full.href = HB.docs + HB.fullPdf; $full.setAttribute('download', 'accreditation-handbook-' + HB.id + '.pdf'); document.getElementById('fullInfo').textContent = 'PDF 다운로드' + (HB.fullPages ? ' · ' + HB.fullPages + '쪽' : ''); }
     var ks = document.getElementById('ourKind'), ys = document.getElementById('ourYear'), opts = '';
     for (var yy = 2026; yy <= 2040; yy++) opts += '<option value="' + yy + '"' + (yy === OUR.year ? ' selected' : '') + '>' + yy + '년</option>';
     ys.innerHTML = opts; ks.value = OUR.kind;
