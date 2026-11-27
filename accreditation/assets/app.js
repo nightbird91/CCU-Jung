@@ -273,8 +273,9 @@
     $side.innerHTML = '<div class="sidebar-inner">' + h + '</div>';
     var collapsed = {};
     $side.querySelectorAll('[data-node]').forEach(function (li) { collapsed[li.getAttribute('data-node')] = 1; });   // 처음에는 모두 접힘
-    try { var st = localStorage.getItem('acc-toc6'); if (st) collapsed = JSON.parse(st) || collapsed; } catch (e) {}
-    function save() { try { localStorage.setItem('acc-toc6', JSON.stringify(collapsed)); } catch (e) {} }
+    /* 페이지를 열 때마다 모두 접힌 상태로 시작(펼침 상태는 저장하지 않음, 예전에 저장된 값은 지움) */
+    try { localStorage.removeItem('acc-toc6'); } catch (e) {}
+    function save() {}
     function setNode(li, open) {
       li.classList.toggle('collapsed', !open);
       li.querySelector(':scope > .tg').setAttribute('aria-expanded', open ? 'true' : 'false');
