@@ -262,8 +262,9 @@
     h += '</nav><div class="side-extra"><a class="side-link" href="#/plan" data-key="plan"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="16" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><b>기본계획 · 등급 기준</b></a><a class="side-link" href="#/changes" data-key="changes"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h11M4 12h7M4 17h11"/><path d="M17 10l3 3-3 3"/></svg><b>변경사항(3주기)</b></a><a class="side-link" href="#/refs" data-key="refs"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><rect x="9" y="12" width="6" height="5" rx="1"/><path d="M10.5 12v-1a1.5 1.5 0 0 1 3 0v1"/></svg><b>참고자료</b></a><a class="side-link" href="#/search" data-key="search"><svg class="side-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><b>검색</b></a></div>';
     $side.innerHTML = '<div class="sidebar-inner">' + h + '</div>';
     var collapsed = {};
-    try { collapsed = JSON.parse(localStorage.getItem('jsh-toc') || '{}') || {}; } catch (e) {}
-    function save() { try { localStorage.setItem('jsh-toc', JSON.stringify(collapsed)); } catch (e) {} }
+    $side.querySelectorAll('[data-node]').forEach(function (li) { collapsed[li.getAttribute('data-node')] = 1; });   // 처음에는 모두 접힘
+    try { var st = localStorage.getItem('jsh-toc2'); if (st) collapsed = JSON.parse(st) || collapsed; } catch (e) {}
+    function save() { try { localStorage.setItem('jsh-toc2', JSON.stringify(collapsed)); } catch (e) {} }
     function setNode(li, open) {
       li.classList.toggle('collapsed', !open);
       li.querySelector(':scope > .tg').setAttribute('aria-expanded', open ? 'true' : 'false');
