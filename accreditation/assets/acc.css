@@ -136,10 +136,6 @@ a.chip { text-decoration: none; }
 .section-title small { font-weight: 600; font-size: var(--fs-sm); }
 .hb-meta { border-top: 0; padding-top: 0; margin-top: 10px; }
 #hbInfo .settings-row { grid-column: 1 / -1; }
-.hb-pdf { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--action); font-size: var(--fs-sm); font-weight: 700; text-decoration: none; }
-.hb-pdf svg { width: 16px; height: 16px; }
-.hb-pdf small { color: var(--text-3); font-weight: 600; }
-.hb-pdf:hover { border-color: var(--action); }
 .settings-org .org-name { display: inline-flex; align-items: center; gap: 8px; }
 .settings-org img.org-mark { display: inline-block; height: 26px; width: auto; background: none; padding: 0; border-radius: 0; align-self: center; }
 /* 편람 원문 쪽 버튼 */
