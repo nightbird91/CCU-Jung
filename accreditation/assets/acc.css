@@ -140,3 +140,5 @@ a.chip { text-decoration: none; }
 .hb-pdf svg { width: 16px; height: 16px; }
 .hb-pdf small { color: var(--text-3); font-weight: 600; }
 .hb-pdf:hover { border-color: var(--action); }
+.settings-org .org-name { display: inline-flex; align-items: center; gap: 8px; }
+.settings-org img.org-mark { display: inline-block; height: 26px; width: auto; background: none; padding: 0; border-radius: 0; align-self: center; }
