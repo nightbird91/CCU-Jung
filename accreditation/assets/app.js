@@ -106,8 +106,8 @@
       '<div class="bar acc-bar" role="img" aria-label="평가영역별 평가요소 수">' + AREAS.map(function (a) { var n = a.criteria.reduce(function (s, c) { return s + c.elements.length; }, 0); return '<span class="' + areaCls(a) + '" style="width:' + (n * 100 / INDEX.length) + '%"></span>'; }).join('') + '</div>' +
       '<div class="legend">' + AREAS.map(function (a) { return '<span class="' + areaCls(a) + '"><i></i>' + esc(a.id + '. ' + a.name) + '</span>'; }).join('') + '</div>' +
       '</section>';
-    h += xh('homeTop');
     h += cycleCard(false);
+    h += xh('homeTop');
 
     h += '<div class="filters" role="group" aria-label="유형 필터">';
     types.forEach(function (t) {

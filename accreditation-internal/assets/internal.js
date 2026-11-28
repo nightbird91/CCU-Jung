@@ -6,7 +6,7 @@
      · 담당자 몫(people[]): 담당자마다 '전화번호 뒤 4자리'로 따로 잠금 → 4자리를 넣으면 그 사람의 평가요소만 열림(이름 목록은 보이지 않음)
      · 전체 명단(admin)·확인값(acheck): '담당자 지정 관리자 비밀번호'로 잠금 → 담당자 현황표, 양식 받기, 명단 올리기, 비밀번호 바꾸기
      · 처음(acheck 없음)에는 보급용 '참고자료 다운로드 비밀번호'로 확인하고, 관리자가 이후 새 비밀번호로 바꿀 수 있음
-   - 기기 저장(localStorage): acci-mode(일반/담당자 전용), acci-who(고른 이름), acci-all(전체 보기),
+   - 기기 저장(localStorage): acci-mode(공통/담당자 전용), acci-who(고른 이름), acci-all(전체 보기),
      acci-prog(내 준비 체크리스트), acci-roster(풀린 명단, '이 기기에서 기억'을 고른 경우. 아니면 sessionStorage) */
 (function () {
   'use strict';
@@ -433,7 +433,7 @@
   $adm.className = 'admin-pw ai-admin'; $adm.id = 'aiAdmin';
   document.querySelector('#adminBox .admin-body').appendChild($adm);
   function renderAdm() {
-    $adm.hidden = mode !== 'staff';   // 일반 모드에서는 담당자 명단 관리를 숨김
+    $adm.hidden = mode !== 'staff';   // 공통 모드에서는 담당자 명단 관리를 숨김
     var h = '<b>담당자 명단 관리 <small>내부용</small></b>';
     if (!ADMPW) {
       h += '<p class="admin-help">담당자 지정 관리자 비밀번호를 넣은 사람만 담당자 지정 양식을 받고 명단을 올릴 수 있습니다.' +
@@ -456,7 +456,7 @@
 
   function renderSettings() {
     var h = '<span id="aiModeLbl">보기 방식</span><div class="theme-seg" role="group" aria-labelledby="aiModeLbl">' +
-      '<button type="button" data-ai="mode" data-mode="general" aria-pressed="' + (mode === 'general') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/></svg>일반</button>' +
+      '<button type="button" data-ai="mode" data-mode="general" aria-pressed="' + (mode === 'general') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v15H6a2 2 0 0 0-2 2z"/></svg>공통</button>' +
       '<button type="button" data-ai="mode" data-mode="staff" aria-pressed="' + (mode === 'staff') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>담당자 전용</button></div>';
     if (mode === 'staff') {
       if (!encLoaded) h += '<p class="lock-msg">명단 확인 중…</p>';
@@ -530,7 +530,13 @@
     var b = ev.target.closest('[data-ai]'); if (!b) return;
     var act = b.getAttribute('data-ai');
     if (b.closest('#settingsPanel')) ev.stopImmediatePropagation();   // 다시 그린 버튼이 패널 밖으로 판정되어 설정 창이 닫히지 않게
-    if (act === 'mode') { mode = b.getAttribute('data-mode'); put('acci-mode', mode); refresh(); }
+    if (act === 'mode') {
+      mode = b.getAttribute('data-mode'); put('acci-mode', mode); refresh();
+      if (mode === 'general') {   // 공통을 고르면 설정 창을 닫고 첫 화면으로
+        $panel.hidden = true; var sb = document.getElementById('settingsBtn'); if (sb) sb.setAttribute('aria-expanded', 'false');
+        if (location.hash !== '#/' && location.hash !== '') location.hash = '#/'; window.scrollTo(0, 0);
+      }
+    }
     else if (act === 'pick') pick(b.getAttribute('data-name'));
     else if (act === 'rename') { who = ''; put('acci-who', null); calcMine(); refresh(); }
     else if (act === 'mine' || act === 'all') { showAll = act === 'all'; put('acci-all', showAll ? '1' : null); refresh(); }
